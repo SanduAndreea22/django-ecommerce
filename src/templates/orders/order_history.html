@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Istoricul comenzilor{% endblock %}
+
+{% block content %}
+<div class="order-history-container">
+    <h1>Istoricul comenzilor</h1>
+
+    {% if orders %}
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>ID Comandă</th>
+                    <th>Data</th>
+                    <th>Status Comandă</th>
+                    <th>Status Plată</th>
+                    <th>Total</th>
+                    <th>Detalii</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>{{ order.order_number }}</td>
+                    <td>{{ order.created_at|date:"d-m-Y H:i" }}</td>
+                    <td>{{ order.status|capfirst }}</td>
+                    <td>{{ order.payment_status|capfirst }}</td>
+                    <td>{{ order.total_after_discount|floatformat:2 }} RON</td>
+                    <td><a href="{% url 'orders:order_detail' order.id %}" class="btn-detail">Vezi detalii</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="no-orders">
+            Nu ai plasat nicio comandă încă.
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Shop{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+<header class="header">
+    <div class="container header-flex">
+        <a href="/" class="logo">MyShop</a>
+       <nav>
+    <a href="/">Home</a>
+    <a href="/products/">Catalog</a>
+    <a href="/cart/">Cart</a>
+
+    {% if user.is_authenticated %}
+        <a href="{% url 'accounts:profile' %}">Profile</a>
+        <a href="{% url 'accounts:logout' %}">Logout</a>
+        <a href="{% url 'orders:order_history' %}">My Orders</a>
+
+    {% else %}
+        <a href="{% url 'accounts:login' %}">Login</a>
+        <a href="{% url 'accounts:register' %}">Register</a>
+    {% endif %}
+</nav>
+
+    </div>
+</header>
+
+<main class="container">
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+    <p>© {{ now|date:"Y" }} MyShop</p>
+</footer>
+</body>
+</html>
+
+

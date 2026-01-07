@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="order-detail">
+    <h1>Comanda #{{ order.id }}</h1>
+    <p>Status: <strong>{{ order.status }}</strong></p>
+    <p>Data: {{ order.created_at|date:"d-m-Y H:i" }}</p>
+
+    {% if order.items.all %}
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>Produs</th>
+                    <th>Cantitate</th>
+                    <th>Preț per buc.</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td>{{ item.product.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.price }} RON</td>
+                    <td>{{ item.item_total }} RON</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <p><strong>Total comandă: {{ order.total_price }} RON</strong></p>
+    {% else %}
+        <div class="no-orders">Nu există produse în această comandă.</div>
+    {% endif %}
+
+    <a class="button" href="{% url 'orders:order_history' %}">Înapoi la istoricul comenzilor</a>
+</div>
+
+{% endblock %}

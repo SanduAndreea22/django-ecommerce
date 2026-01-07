@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Login</h2>
+
+    <!-- afișare erori -->
+    {% if form.errors %}
+        <div class="form-errors" style="color: red; margin-bottom: 10px;">
+            {{ form.errors }}
+        </div>
+    {% endif %}
+
+    <form method="post" class="auth-form">
+        {% csrf_token %}
+        {{ form.username.label_tag }}
+        {{ form.username }}
+
+        {{ form.password.label_tag }}
+        <div class="password-wrapper">
+            {{ form.password }}
+            <button type="button" class="toggle-password">👁️</button>
+        </div>
+
+        <button type="submit" class="btn-submit">Login</button>
+    </form>
+</div>
+
+<script src="{% static 'js/login.js' %}"></script>
+{% endblock %}
+

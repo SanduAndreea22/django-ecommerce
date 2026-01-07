@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="product-detail">
+
+        <div class="gallery">
+            {% if product.images.all %}
+                <div class="main-img-container">
+                    <img id="main-display" src="{{ product.images.all.0.image.url }}" alt="{{ product.name }}">
+                </div>
+
+                <div class="thumb-container">
+                    {% for image in product.images.all %}
+                        <img src="{{ image.image.url }}"
+                             alt="{{ product.name }}"
+                             onclick="document.getElementById('main-display').src=this.src">
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="main-img-container">
+                    <p>Fără imagini disponibile</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="info">
+            <h1>{{ product.name }}</h1>
+
+            <div class="price-display">
+                <span id="currentPrice">{{ product.base_price }}</span> RON
+            </div>
+
+            <div class="description">
+                {{ product.description|linebreaks }}
+            </div>
+
+            {% if variants %}
+                <label for="variantSelect">Alege varianta:</label>
+                <select id="variantSelect">
+                    {% for variant in variants %}
+                        <option value="{{ variant.id }}"
+                                data-stock="{{ variant.stock_quantity }}"
+                                data-price="{{ variant.price_override|default:product.base_price }}">
+                            {% if variant.size %}{{ variant.size }}{% endif %}
+                            {% if variant.color %} - {{ variant.color }}{% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            {% endif %}
+
+            <p id="stockInfo" style="margin-bottom: 20px; font-weight: bold; color: #28a745;"></p>
+
+            <form method="POST" action="{% url 'cart:add_to_cart' product.id %}">
+    {% csrf_token %}
+    {% if variants %}
+        <input type="hidden" name="variant_id" id="variantInput">
+    {% endif %}
+    <button type="submit" class="btn">Adaugă în coș</button>
+</form>
+
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const variantSelect = document.getElementById('variantSelect');
+    const stockInfo = document.getElementById('stockInfo');
+    const currentPrice = document.getElementById('currentPrice');
+
+    if (variantSelect) {
+        function updateVariant() {
+            const selected = variantSelect.options[variantSelect.selectedIndex];
+            const stock = selected.getAttribute('data-stock');
+            const price = selected.getAttribute('data-price');
+
+            stockInfo.textContent = `Stoc: ${stock} bucăți disponibile`;
+            currentPrice.textContent = price;
+
+            // Schimbă culoarea dacă stocul e zero
+            stockInfo.style.color = stock > 0 ? "#28a745" : "#dc3545";
+            if(stock <= 0) stockInfo.textContent = "Stoc epuizat";
+        }
+
+        variantSelect.addEventListener('change', updateVariant);
+        updateVariant(); // Initializare
+    }
+</script>
+{% endblock %}

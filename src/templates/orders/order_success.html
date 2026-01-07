@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Order Success{% endblock %}
+
+{% block content %}
+<h1>Thank you!</h1>
+<p>Your order <strong>{{ order.order_number }}</strong> has been placed successfully.</p>
+
+<h3>Order Details</h3>
+<ul>
+    {% for item in order.items.all %}
+    <li>{{ item.variant.product.name }} x {{ item.quantity }} - {{ item.price_at_purchase|floatformat:2 }} RON</li>
+    {% endfor %}
+</ul>
+
+<p><strong>Discount:</strong> {{ order.discount_amount|floatformat:2 }} RON</p>
+<p><strong>Total Paid:</strong> {{ order.total_after_discount|floatformat:2 }} RON</p>
+
+<a href="/" class="btn-submit">Back to Shop</a>
+{% endblock %}

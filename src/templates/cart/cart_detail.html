@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Your Cart{% endblock %}
+
+{% block content %}
+<h1 class="cart-title">Your Cart</h1>
+
+{% if items %}
+<table class="cart-table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Variant</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Item Total</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.variant.product.name }}</td>
+            <td>
+                {% if item.variant.size %}Size: {{ item.variant.size }}<br>{% endif %}
+                {% if item.variant.color %}Color: {{ item.variant.color }}{% endif %}
+            </td>
+            <td>
+                {% if item.variant.price_override %}
+                    {{ item.variant.price_override|floatformat:2 }} RON
+                {% else %}
+                    {{ item.variant.product.base_price|floatformat:2 }} RON
+                {% endif %}
+            </td>
+            <td>
+                <form method="post" action="{% url 'cart:update_cart' item.id %}" class="cart-form">
+                    {% csrf_token %}
+                    <input type="number"
+                           name="quantity"
+                           class="quantity-input"
+                           value="{{ item.quantity }}"
+                           min="1"
+                           max="{{ item.variant.stock_quantity }}">
+                    <button type="submit">Update</button>
+                    <p class="stock-msg" style="color:#dc3545; display:none;">Stock exceeded!</p>
+                </form>
+            </td>
+            <td>{{ item.item_total|floatformat:2 }} RON</td>
+            <td><a class="cart-remove" href="{% url 'cart:remove_from_cart' item.id %}">Remove</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="cart-summary">
+    <h3>Summary</h3>
+    <div class="cart-summary-row">
+        <span>Subtotal:</span>
+        <span>{{ subtotal|floatformat:2 }} RON</span>
+    </div>
+
+    {% if coupon_code %}
+    <div class="cart-summary-row">
+        <span>Coupon ({{ coupon_code }}):</span>
+        <span>-{{ discount|floatformat:2 }} RON</span>
+    </div>
+    {% endif %}
+
+    <div class="cart-summary-row cart-summary-total">
+        <span>Total:</span>
+        <span>{{ total|floatformat:2 }} RON</span>
+    </div>
+
+    <a href="{% url 'orders:checkout' %}" class="checkout-btn">Proceed to Checkout</a>
+</div>
+
+<div class="cart-coupon">
+    <h3>Have a coupon?</h3>
+    <form method="post" class="coupon-form">
+        {% csrf_token %}
+        <input type="text" name="code" placeholder="Enter coupon code" value="{{ coupon_code|default:'' }}">
+        <button type="submit">Apply</button>
+    </form>
+
+    {% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+        <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if coupon_code %}
+        <p class="coupon-applied">Coupon <strong>{{ coupon_code }}</strong> applied - Discount: {{ discount|floatformat:2 }} RON</p>
+    {% endif %}
+</div>
+
+{% else %}
+<p>Your cart is empty.</p>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const cartForms = document.querySelectorAll('.cart-form');
+    cartForms.forEach(form => {
+        const input = form.querySelector('.quantity-input');
+        const max = parseInt(input.getAttribute('max'));
+        const stockMsg = form.querySelector('.stock-msg');
+
+        input.addEventListener('input', () => {
+            const value = parseInt(input.value);
+            if(value > max){
+                input.value = max;
+                stockMsg.style.display = 'block';
+            } else {
+                stockMsg.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+

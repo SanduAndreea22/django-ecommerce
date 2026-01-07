@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Checkout{% endblock %}
+
+{% block content %}
+<div class="checkout-container">
+    <h2>Checkout</h2>
+
+    <form method="post" class="checkout-form">
+        {% csrf_token %}
+
+        <!-- Shipping Address -->
+        <h3>Shipping Address</h3>
+        {{ shipping_form.as_p }}
+
+        <!-- Payment Method (fix: cash) -->
+        <h3>Payment Method</h3>
+        <p>Cash (Plată la livrare)</p>
+
+        <!-- Order Summary -->
+        <div class="order-summary">
+            <h3>Order Summary</h3>
+            <ul>
+                {% for item in cart_items %}
+                <li>
+                    {{ item.variant.product.name }}
+                    {% if item.variant.size %} ({{ item.variant.size }}){% endif %}
+                    {% if item.variant.color %} - {{ item.variant.color }}{% endif %}
+                    x {{ item.quantity }} -
+                    {% if item.variant.price_override %}
+                        {{ item.variant.price_override|floatformat:2 }}
+                    {% else %}
+                        {{ item.variant.product.base_price|floatformat:2 }}
+                    {% endif %} RON
+                </li>
+                {% endfor %}
+            </ul>
+
+            <p><strong>Subtotal:</strong> <span id="subtotal">{{ subtotal|floatformat:2 }}</span> RON</p>
+            {% if discount %}
+            <p><strong>Discount:</strong> <span id="discount">{{ discount|floatformat:2 }}</span> RON</p>
+            {% endif %}
+            <p><strong>Total:</strong> <span id="total">{{ total|floatformat:2 }}</span> RON</p>
+        </div>
+
+        <button type="submit" class="btn-submit">Place Order</button>
+    </form>
+</div>
+{% endblock %}
