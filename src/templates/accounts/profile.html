@@ -1,13 +1,36 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="profile-container">
+<div class="container mt-5">
     <h2>My Profile</h2>
-    <p><strong>Username:</strong> {{ user.username }}</p>
-    <p><strong>Phone:</strong> {{ profile.phone_number }}</p>
-    <p><strong>Address:</strong> {{ profile.default_shipping_address }}</p>
+    <hr>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
 
-    <a href="{% url 'accounts:edit_profile' %}" class="btn-submit">Edit Profile</a>
+    <div class="row">
+        <div class="col-md-4">
+            <img src="{{ user.image.url }}" class="img-thumbnail" alt="Profile">
+        </div>
+        <div class="col-md-8">
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                        {{ field }}
+                        {% for error in field.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="{% url 'accounts:logout' %}" class="btn btn-danger">Logout</a>
+            </form>
+        </div>
+    </div>
 </div>
 {% endblock %}
-

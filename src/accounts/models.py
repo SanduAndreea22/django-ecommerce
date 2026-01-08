@@ -1,12 +1,17 @@
+from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.contrib.auth.models import User
+import os
 
-class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    phone_number = models.CharField(max_length=20, blank=True)
-    default_shipping_address = models.CharField(max_length=255, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+class CustomUser(AbstractUser):
+    def image_upload_to(self, instance=None):
+        if instance:
+            return os.path.join("Users", self.username, instance)
+        return None
+
+    email = models.EmailField(unique=True)
+    description = models.TextField("Description", max_length=600, default='', blank=True)
+    image = models.ImageField(default='default/user.jpg', upload_to=image_upload_to)
 
     def __str__(self):
-        return self.user.username
+        return self.username
 

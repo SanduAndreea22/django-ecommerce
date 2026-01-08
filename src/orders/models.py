@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings  # <-- important
 from products.models import Variant
 from coupons.models import Coupon
 
@@ -15,7 +15,12 @@ class Order(models.Model):
         ('cash', 'Cash'),
     )
 
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,  # <-- folosește CustomUser
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
     order_number = models.CharField(max_length=20, unique=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     payment_method = models.CharField(max_length=10, choices=PAYMENT_CHOICES, default='cash')
