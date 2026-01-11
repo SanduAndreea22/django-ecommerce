@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>Factura #{{ order.order_number }}</title>
+    <style>
+        body { font-family: 'Helvetica', Arial, sans-serif; margin: 0; padding: 0; color: #333; }
+        .container { width: 90%; margin: 0 auto; padding: 20px; }
+        header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        header img { max-height: 60px; }
+        h1 { text-align: center; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .totals { margin-top: 20px; width: 100%; display: flex; justify-content: flex-end; }
+        .totals div { margin-bottom: 5px; }
+        footer { border-top: 2px solid #000; text-align: center; padding-top: 10px; margin-top: 40px; font-size: 12px; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <img src="{% static 'images/logo.png' %}" alt="Logo MyShop">
+            </div>
+            <div>
+                <strong>Factura Comanda #{{ order.order_number }}</strong><br>
+                Data: {{ order.created_at|date:"d-m-Y H:i" }}
+            </div>
+        </header>
+
+        <h1>Factura</h1>
+
+        {% if order.user %}
+<p><strong>Client:</strong> {{ order.user.username }}</p>
+{% else %}
+<p><strong>Client:</strong> Guest</p>
+{% endif %}
+        {% if order.shipping_address %}
+        <p><strong>Adresă livrare:</strong> {{ order.shipping_address.full_name }}, {{ order.shipping_address.address_line_1 }}, {{ order.shipping_address.city }}, {{ order.shipping_address.postal_code }}, {{ order.shipping_address.country }}</p>
+        {% endif %}
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Produs</th>
+                    <th>Cantitate</th>
+                    <th>Preț/buc</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items.all %}
+                <tr>
+                    <td>{{ item.variant.product.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.price_at_purchase }} RON</td>
+                    <td>{{ item.total_price }} RON</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <div>
+                <div>Subtotal: {{ order.total_amount }} RON</div>
+                {% if order.discount_amount %}
+                <div>Discount: {{ order.discount_amount }} RON</div>
+                {% endif %}
+                <div><strong>Total de plată: {{ order.total_after_discount }} RON</strong></div>
+            </div>
+        </div>
+
+        <footer>
+            MyShop eCommerce • www.myshop.ro • contact@myshop.ro
+        </footer>
+    </div>
+</body>
+</html>

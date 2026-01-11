@@ -5,6 +5,9 @@ Django settings for Cash-only eCommerce (test with real email).
 from pathlib import Path
 import os
 
+# Importăm cheile sensibile din secrets.py
+from .secrets import SECRET_KEY, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD
+
 # -------------------------------
 # Paths
 # -------------------------------
@@ -13,7 +16,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # -------------------------------
 # Security
 # -------------------------------
-SECRET_KEY = 'replace-with-your-secret-key'  # test only, schimbă pentru producție
 DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']  # test local
 
@@ -147,9 +149,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'emotional.planner.app@gmail.com'        # schimba cu adresa ta reală
-EMAIL_HOST_PASSWORD = 'twtj otzx erfw efum'      # parola de aplicație Gmail
-DEFAULT_FROM_EMAIL = 'CashOnly eCommerce <myemail@gmail.com>'
+EMAIL_HOST_USER = EMAIL_HOST_USER
+EMAIL_HOST_PASSWORD = EMAIL_HOST_PASSWORD
+DEFAULT_FROM_EMAIL = f'CashOnly eCommerce <{EMAIL_HOST_USER}>'
 
 # -------------------------------
 # Default primary key field type

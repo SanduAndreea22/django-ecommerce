@@ -3,6 +3,8 @@ from django.conf import settings  # <-- important
 from products.models import Variant
 from coupons.models import Coupon
 
+
+
 class Order(models.Model):
     STATUS_CHOICES = (
         ('pending', 'Pending'),
@@ -49,7 +51,12 @@ class OrderItem(models.Model):
 
     @property
     def total_price(self):
-        return self.price_at_purchase * self.quantity
+        if self.price_at_purchase is not None:
+            price = self.price_at_purchase
+        else:
+            # fallback: dacă price_at_purchase lipsă, folosim price_override sau base_price
+            price = self.variant.price_override if self.variant and self.variant.price_override is not None else self.variant.product.base_price
+        return price * self.quantity
 
 
 class ShippingAddress(models.Model):

@@ -18,3 +18,5 @@ staticfiles/
 
 # Environment
 .env
+
+config/secrets.py

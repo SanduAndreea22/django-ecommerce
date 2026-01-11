@@ -3,38 +3,67 @@
 {% block content %}
 
 <div class="order-detail">
-    <h1>Comanda #{{ order.id }}</h1>
+    <h1>Comanda #{{ order.order_number }}</h1>
+
     <p>Status: <strong>{{ order.status }}</strong></p>
     <p>Data: {{ order.created_at|date:"d-m-Y H:i" }}</p>
 
-    {% if order.items.all %}
+    {% if order.items.exists %}
         <table class="orders-table">
             <thead>
                 <tr>
                     <th>Produs</th>
                     <th>Cantitate</th>
-                    <th>Preț per buc.</th>
+                    <th>Preț / buc</th>
                     <th>Total</th>
                 </tr>
             </thead>
             <tbody>
                 {% for item in order.items.all %}
                 <tr>
-                    <td>{{ item.product.name }}</td>
+                    <td>
+                        {{ item.variant.product.name }}
+                        {% if item.variant.name %}
+                            ({{ item.variant.name }})
+                        {% endif %}
+                    </td>
                     <td>{{ item.quantity }}</td>
-                    <td>{{ item.price }} RON</td>
-                    <td>{{ item.item_total }} RON</td>
+                    <td>{{ item.price_at_purchase }} RON</td>
+                    <td>{{ item.total_price }} RON</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
-        <p><strong>Total comandă: {{ order.total_price }} RON</strong></p>
+    <a class="btn btn-primary" href="{% url 'orders:download_invoice' order.id %}">
+    Descarcă factura
+</a>
+
+
+
+
+        <p><strong>Total comandă: {{ order.total_after_discount }} RON</strong></p>
     {% else %}
         <div class="no-orders">Nu există produse în această comandă.</div>
     {% endif %}
 
-    <a class="button" href="{% url 'orders:order_history' %}">Înapoi la istoricul comenzilor</a>
+    <hr>
+
+    {% if order.status == 'pending' %}
+        <form method="post" action="{% url 'orders:cancel_order' order.id %}">
+            {% csrf_token %}
+            <button class="btn btn-danger"
+                onclick="return confirm('Sigur vrei să anulezi comanda?');">
+                Anulează comanda
+            </button>
+        </form>
+    {% endif %}
+
+    <br>
+
+    <a class="button" href="{% url 'orders:order_history' %}">
+        Înapoi la istoricul comenzilor
+    </a>
 </div>
 
 {% endblock %}

@@ -52,22 +52,30 @@ from coupons.forms import CouponApplyForm
 from coupons.models import Coupon
 from django.contrib import messages
 
+from decimal import Decimal
+from django.shortcuts import render
+from django.contrib import messages
+from cart.models import CartItem
+from coupons.models import Coupon
+from coupons.forms import CouponApplyForm
+
 def cart_detail(request):
-    # Merge session cart dacă user-ul e logat
+    # Dacă user-ul e logat, mutăm itemele din sesiune în user
     if request.user.is_authenticated:
-        merge_session_cart_to_user(request)
+        merge_session_cart_to_user(request)  # presupun că ai deja funcția asta
         items = CartItem.objects.filter(user=request.user)
     else:
-        session_key = _get_session_key(request)
+        session_key = _get_session_key(request)  # presupun că ai funcția asta
         items = CartItem.objects.filter(session_key=session_key)
 
-    subtotal = 0
+    # Calculăm subtotal
+    subtotal = Decimal('0.00')
     for item in items:
         price = item.variant.price_override or item.variant.product.base_price
         item.item_total = price * item.quantity
         subtotal += item.item_total
 
-    # Formular cupon
+    # Formular aplicare cupon
     if request.method == 'POST':
         form = CouponApplyForm(request.POST)
         if form.is_valid():
@@ -76,7 +84,8 @@ def cart_detail(request):
                 coupon = Coupon.objects.get(code=code)
                 if coupon.is_valid(subtotal):
                     request.session['coupon_code'] = coupon.code
-                    request.session['coupon_discount'] = float(coupon.calculate_discount(subtotal))
+                    # Salvăm discount-ul ca string, apoi îl citim ca Decimal
+                    request.session['coupon_discount'] = str(coupon.calculate_discount(subtotal))
                     messages.success(request, f"Cuponul {coupon.code} a fost aplicat!")
                 else:
                     messages.error(request, "Cuponul nu este valid sau nu se aplică la această comandă.")
@@ -85,8 +94,11 @@ def cart_detail(request):
     else:
         form = CouponApplyForm()
 
+    # Citim discount-ul din sesiune
     coupon_code = request.session.get('coupon_code')
-    discount_amount = request.session.get('coupon_discount', 0)
+    discount_amount = Decimal(request.session.get('coupon_discount', '0.00'))
+
+    # Calculăm totalul
     total = subtotal - discount_amount
 
     context = {
@@ -98,6 +110,7 @@ def cart_detail(request):
         'form': form,
     }
     return render(request, 'cart/cart_detail.html', context)
+
 
 def update_cart(request, item_id):
     item = get_object_or_404(CartItem, id=item_id)
