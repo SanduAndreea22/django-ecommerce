@@ -125,14 +125,14 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-if DEBUG:
-    STATICFILES_DIRS = [BASE_DIR / "static"]
+# Scoatem "if DEBUG:" pentru ca Django să vadă folderul și pe server
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
+# Whitenoise settings
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-
 # ====================================================
 # AUTH
 # ====================================================
