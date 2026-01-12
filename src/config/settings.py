@@ -125,10 +125,12 @@ USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Scoatem "if DEBUG:" pentru ca Django să vadă folderul și pe server
-STATICFILES_DIRS = [BASE_DIR / "static"]
+# Folderul unde se află CSS-ul tău (src/static)
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
-# Whitenoise settings
+# Aceasta trebuie să fie activă mereu pentru Render
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
