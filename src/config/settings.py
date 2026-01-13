@@ -16,7 +16,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Security
 # -------------------------------
 DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']  # test local
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'django-ecommerce-c2s6.onrender.com',  # <--- adaugă aici
+]
 
 # -------------------------------
 # Applications
