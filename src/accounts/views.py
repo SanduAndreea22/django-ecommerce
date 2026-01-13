@@ -10,6 +10,7 @@ from django.contrib.sites.shortcuts import get_current_site
 
 from .forms import UserRegistrationForm, UserLoginForm, UserUpdateForm
 from .tokens import account_activation_token
+import threading
 
 User = get_user_model()
 
@@ -24,6 +25,15 @@ def register_view(request):
             user = form.save(commit=False)
             user.is_active = True  # disable account until email confirmation
             user.save()
+
+            def send_email():
+                try:
+                    email.send(fail_silently=False)
+                    print("LOG: Email trimis cu succes!")
+                except Exception as e:
+                    print(f"LOG EROARE EMAIL: {e}")
+
+            threading.Thread(target=send_email).start()
 
             # Send activation email
             current_site = get_current_site(request)
