@@ -1,0 +1,15 @@
+[
+  {"model": "products.category", "pk": 1, "fields": {"name": "Femei", "slug": "femei"}},
+  {"model": "products.category", "pk": 2, "fields": {"name": "Bărbați", "slug": "barbati"}},
+  {"model": "products.category", "pk": 3, "fields": {"name": "Unisex", "slug": "unisex"}},
+  {"model": "products.category", "pk": 4, "fields": {"name": "Buze", "slug": "buze"}},
+  {"model": "products.category", "pk": 5, "fields": {"name": "Ochi", "slug": "ochi"}},
+  {"model": "products.category", "pk": 6, "fields": {"name": "Față", "slug": "fata"}},
+  {"model": "products.category", "pk": 7, "fields": {"name": "Ceasuri", "slug": "ceasuri"}},
+  {"model": "products.category", "pk": 8, "fields": {"name": "Posete", "slug": "posete"}},
+  {"model": "products.category", "pk": 9, "fields": {"name": "Bijuterii", "slug": "bijuterii"}},
+  {"model": "products.category", "pk": 10, "fields": {"name": "Păr", "slug": "par"}},
+  {"model": "products.category", "pk": 11, "fields": {"name": "Corp", "slug": "corp"}},
+  {"model": "products.category", "pk": 12, "fields": {"name": "Parfum", "slug": "parfum"}}
+]
+
