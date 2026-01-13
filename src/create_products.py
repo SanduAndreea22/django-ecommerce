@@ -3,6 +3,8 @@ import os
 import django
 import random
 
+from django.utils.text import slugify
+
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
@@ -64,7 +66,7 @@ for p in products_data:
     cat = category_objs[p[1]]
     product, created = Product.objects.get_or_create(
         name=p[0],
-        slug=p[0].lower().replace(" ", "-"),
+        slug=slugify(p[0]),
         category=cat,
         defaults={
             'description': p[2],
