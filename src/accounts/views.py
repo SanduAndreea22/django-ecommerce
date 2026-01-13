@@ -22,7 +22,7 @@ def register_view(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.is_active = False  # disable account until email confirmation
+            user.is_active = True  # disable account until email confirmation
             user.save()
 
             # Send activation email
