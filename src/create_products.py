@@ -1,79 +1,90 @@
 # src/create_products.py
 import os
 import django
+import random
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from products.models import Product, Category
+from products.models import Category, Product, Variant
 
 # -------------------------------
-# Categoriile
+# 1. Creare categorii
 # -------------------------------
 categories = [
-    "Parfumuri Femei",
-    "Parfumuri Bărbați",
-    "Parfumuri Unisex",
-    "Machiaj Buze",
-    "Machiaj Ochi",
-    "Machiaj Față",
-    "Îngrijire Păr",
-    "Îngrijire Corp",
-    "Bijuterii",
+    "Parfum Femei",
+    "Parfum Bărbați",
+    "Parfum Unisex",
+    "Make-up Buze",
+    "Make-up Ochi",
+    "Make-up Față",
     "Ceasuri",
-    "Posete"
+    "Posete",
+    "Bijuterii",
+    "Îngrijire Corp",
 ]
 
-category_objects = {}
-for name in categories:
-    slug = name.lower().replace(" ", "-")
-    obj, created = Category.objects.get_or_create(name=name, slug=slug)
-    category_objects[name] = obj
+category_objs = {}
+for cat_name in categories:
+    slug = cat_name.lower().replace(" ", "-")
+    cat_obj, created = Category.objects.get_or_create(name=cat_name, slug=slug)
+    category_objs[cat_name] = cat_obj
 
 # -------------------------------
-# Produsele
+# 2. Produse + variante
 # -------------------------------
 products_data = [
-    ["Chanel No5", "Parfumuri Femei", "50 ml", None, 450, 10, "chanel-no5"],
-    ["Dior J'adore", "Parfumuri Femei", "50 ml", None, 400, 12, "dior-jadore"],
-    ["Gucci Bloom", "Parfumuri Femei", "50 ml", None, 350, 15, "gucci-bloom"],
-    ["Bleu de Chanel", "Parfumuri Bărbați", "50 ml", None, 420, 10, "bleu-de-chanel"],
-    ["Dior Sauvage", "Parfumuri Bărbați", "50 ml", None, 430, 8, "dior-sauvage"],
-    ["CK One", "Parfumuri Unisex", "100 ml", None, 300, 20, "ck-one"],
-    ["Tom Ford Neroli Portofino", "Parfumuri Unisex", "50 ml", None, 550, 5, "tom-ford-neroli"],
-    ["Ruj Roșu", "Machiaj Buze", "Standard", "Roșu", 80, 25, "ruj-rosu"],
-    ["Luciu de buze", "Machiaj Buze", "Standard", "Nude", 60, 30, "luciu-buze"],
-    ["Mascara", "Machiaj Ochi", "Standard", "Negru", 90, 20, "mascara-negru"],
-    ["Fard de pleoape", "Machiaj Ochi", "Paletă", "Colorat", 120, 15, "fard-pleoape"],
-    ["Eyeliner", "Machiaj Ochi", "Standard", "Negru", 70, 25, "eyeliner-negru"],
-    ["Fond de ten", "Machiaj Față", "30 ml", "Beige", 150, 20, "fond-ten-beige"],
-    ["Pudră", "Machiaj Față", "20 g", "Translucent", 130, 15, "pudra-translucent"],
-    ["Blush", "Machiaj Față", "15 g", "Roz", 100, 18, "blush-roz"],
-    ["Ceas Michael Kors", "Ceasuri", "Unisex", "Auriu", 850, 5, "ceas-mk-auriu"],
-    ["Posetă Gucci", "Posete", "Standard", "Negru", 2000, 3, "poseta-gucci-negru"],
-    ["Colier Argint", "Bijuterii", "45 cm", "Argint", 300, 10, "colier-argint"],
-    ["Cremă hidratantă", "Îngrijire Corp", "50 ml", None, 120, 20, "crema-hidratanta"],
-    ["Serum", "Îngrijire Față", "30 ml", None, 180, 15, "serum-fata"],
-    ["Șampon", "Îngrijire Păr", "250 ml", None, 90, 25, "sampon-par"],
-    ["Loțiune corp", "Îngrijire Corp", "200 ml", None, 100, 20, "lotiune-corp"],
-    ["Set parfum + loțiune", "Parfumuri Femei", "50 ml + 200 ml", None, 700, 10, "set-parfum-lotiune"],
-    ["Creion sprâncene", "Machiaj Ochi", "Standard", "Maro", 50, 20, "creion-sprancene"],
-    ["Balsam de buze", "Machiaj Buze", "5 g", "Translucent", 40, 30, "balsam-buze"]
+    # name, category_name, description, base_price, variants [(size, color, stock, sku, price_override)]
+    ["Chanel No5", "Parfum Femei", "Parfum clasic elegant", 450, [("50 ml", "N/A", 10, "CHANELNO5-50ML", None)]],
+    ["Dior J'adore", "Parfum Femei", "Parfum floral și sofisticat", 400, [("50 ml", "N/A", 12, "DIORJADORE-50ML", None)]],
+    ["Gucci Bloom", "Parfum Femei", "Parfum floral modern", 350, [("50 ml", "N/A", 15, "GUCCIBLOOM-50ML", None)]],
+    ["Bleu de Chanel", "Parfum Bărbați", "Parfum masculin rafinat", 420, [("50 ml", "N/A", 10, "BLEUDECHANEL-50ML", None)]],
+    ["Dior Sauvage", "Parfum Bărbați", "Parfum proaspăt și masculin", 430, [("50 ml", "N/A", 8, "DIORSAUVAGE-50ML", None)]],
+    ["CK One", "Parfum Unisex", "Parfum unisex fresh", 300, [("100 ml", "N/A", 20, "CKONE-100ML", None)]],
+    ["Tom Ford Neroli Portofino", "Parfum Unisex", "Parfum luxos și proaspăt", 550, [("50 ml", "N/A", 5, "TFNEROLI-50ML", None)]],
+    ["Ruj Roșu MAC", "Make-up Buze", "Ruj mat intens", 80, [("Standard", "Roșu", 25, "RUJMAC-RED", None)]],
+    ["Luciu de buze", "Make-up Buze", "Luciu strălucitor", 60, [("Standard", "Nude", 30, "LIPGLOSS-NUDE", None)]],
+    ["Mascara Negru", "Make-up Ochi", "Mascara volum", 90, [("Standard", "Negru", 20, "MASCARA-BLACK", None)]],
+    ["Fard de pleoape", "Make-up Ochi", "Paletă colorată", 120, [("Paletă", "Colorat", 15, "EYESHADOW-COLOR", None)]],
+    ["Eyeliner Negru", "Make-up Ochi", "Liner precis", 70, [("Standard", "Negru", 25, "EYELINER-BLACK", None)]],
+    ["Fond de ten", "Make-up Față", "Acoperire medie", 150, [("30 ml", "Beige", 20, "FOUNDATION-BEIGE", None)]],
+    ["Pudră Translucent", "Make-up Față", "Matifiere fină", 130, [("20 g", "Translucent", 15, "POWDER-TRANSLUCENT", None)]],
+    ["Blush Roz", "Make-up Față", "Accentuare obraji", 100, [("15 g", "Roz", 18, "BLUSH-PINK", None)]],
+    ["Ceas Michael Kors", "Ceasuri", "Ceas elegant unisex", 850, [("Unisex", "Auriu", 5, "MKWATCH-GOLD", None)]],
+    ["Posetă Gucci", "Posete", "Posetă neagră de lux", 2000, [("Standard", "Negru", 3, "GUCCI-BAG-BLACK", None)]],
+    ["Colier Argint", "Bijuterii", "Colier delicat argint", 300, [("45 cm", "Argint", 10, "COLIER-SILVER", None)]],
+    ["Cremă hidratantă", "Îngrijire Corp", "Hidratează pielea", 120, [("50 ml", "N/A", 20, "CREMA-HIDRATANTA", None)]],
+    ["Serum față", "Îngrijire Corp", "Ser facial nutritiv", 180, [("30 ml", "N/A", 15, "SERUM-FATA", None)]],
+    ["Șampon", "Îngrijire Corp", "Șampon pentru toate tipurile de păr", 90, [("250 ml", "N/A", 25, "SHAMPOO", None)]],
+    ["Loțiune corp", "Îngrijire Corp", "Loțiune hidratantă", 100, [("200 ml", "N/A", 20, "LOTION", None)]],
+    ["Set parfum + loțiune", "Parfum Femei", "Set cadou parfum + loțiune", 700, [("50 ml + 200 ml", "N/A", 10, "SET-PARFUM", None)]],
 ]
 
 for p in products_data:
-    category = category_objects[p[1]]
-    Product.objects.get_or_create(
+    cat = category_objs[p[1]]
+    product, created = Product.objects.get_or_create(
         name=p[0],
-        slug=p[6],
+        slug=p[0].lower().replace(" ", "-"),
+        category=cat,
         defaults={
-            "category": category,
-            "size": p[2],
-            "color": p[3] if p[3] else "",
-            "price": p[4],
-            "stock": p[5],
-            "description": f"{p[0]} – categorie: {p[1]}, dimensiune: {p[2]}"
+            'description': p[2],
+            'base_price': p[3],
         }
     )
 
-print("✅ 25 de produse create cu succes!")
+    # Creare variante
+    for var in p[4]:
+        size, color, stock, sku, price_override = var
+        Variant.objects.get_or_create(
+            product=product,
+            size=size,
+            color=color,
+            stock_quantity=stock,
+            sku=sku,
+            defaults={
+                'price_override': price_override
+            }
+        )
+
+print("Am terminat! 25 de produse create cu variante.")
+
