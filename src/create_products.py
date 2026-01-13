@@ -28,7 +28,7 @@ categories = [
 
 category_objs = {}
 for cat_name in categories:
-    slug = cat_name.lower().replace(" ", "-")
+    slug = slugify(cat_name)
     cat_obj, created = Category.objects.get_or_create(name=cat_name, slug=slug)
     category_objs[cat_name] = cat_obj
 
