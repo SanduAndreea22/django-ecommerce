@@ -23,19 +23,10 @@ def register_view(request):
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.is_active = True  # disable account until email confirmation
+            user.is_active = True  # Activat pentru a evita blocarea userului
             user.save()
 
-            def send_email():
-                try:
-                    email.send(fail_silently=False)
-                    print("LOG: Email trimis cu succes!")
-                except Exception as e:
-                    print(f"LOG EROARE EMAIL: {e}")
-
-            threading.Thread(target=send_email).start()
-
-            # Send activation email
+            # 1. DEFINIM email-ul mai întâi
             current_site = get_current_site(request)
             mail_subject = 'Activate your CashOnly eCommerce account'
             message = render_to_string('accounts/activation_email.html', {
@@ -45,7 +36,19 @@ def register_view(request):
                 'token': account_activation_token.make_token(user),
             })
             email = EmailMessage(mail_subject, message, to=[user.email])
-            email.send()
+
+            # 2. DEFINIM funcția de trimitere (care acum vede variabila 'email')
+            def send_email_task():
+                try:
+                    email.send(fail_silently=False)
+                    print("LOG: Email trimis cu succes!")
+                except Exception as e:
+                    print(f"LOG EROARE EMAIL: {e}")
+
+            # 3. PORNIM Thread-ul
+            threading.Thread(target=send_email_task).start()
+
+            # ELIMINAT: email.send() de aici (ar fi trimis a doua oară și ar fi blocat serverul)
 
             messages.success(request, 'Account created! Check your email to activate your account.')
             return redirect('accounts:login')
