@@ -1,8 +1,6 @@
-# src/create_products.py
 import os
 import django
 import random
-
 from django.utils.text import slugify
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
@@ -10,83 +8,95 @@ django.setup()
 
 from products.models import Category, Product, Variant
 
-# -------------------------------
-# 1. Creare categorii
-# -------------------------------
-categories = [
-    "Parfum Femei",
-    "Parfum Bărbați",
-    "Parfum Unisex",
-    "Make-up Buze",
-    "Make-up Ochi",
-    "Make-up Față",
-    "Ceasuri",
-    "Posete",
-    "Bijuterii",
-    "Îngrijire Corp",
-]
-
+# -------------------------
+# Categorii
+# -------------------------
+categories = ["Parfumuri", "Machiaj", "Îngrijire corp"]
 category_objs = {}
+
 for cat_name in categories:
     slug = slugify(cat_name)
-    cat_obj, created = Category.objects.get_or_create(name=cat_name, slug=slug)
+    cat_obj, _ = Category.objects.get_or_create(name=cat_name, slug=slug)
     category_objs[cat_name] = cat_obj
 
-# -------------------------------
-# 2. Produse + variante
-# -------------------------------
+# -------------------------
+# Produse și variante
+# -------------------------
 products_data = [
-    # name, category_name, description, base_price, variants [(size, color, stock, sku, price_override)]
-    ["Chanel No5", "Parfum Femei", "Parfum clasic elegant", 450, [("50 ml", "N/A", 10, "CHANELNO5-50ML", None)]],
-    ["Dior J'adore", "Parfum Femei", "Parfum floral și sofisticat", 400, [("50 ml", "N/A", 12, "DIORJADORE-50ML", None)]],
-    ["Gucci Bloom", "Parfum Femei", "Parfum floral modern", 350, [("50 ml", "N/A", 15, "GUCCIBLOOM-50ML", None)]],
-    ["Bleu de Chanel", "Parfum Bărbați", "Parfum masculin rafinat", 420, [("50 ml", "N/A", 10, "BLEUDECHANEL-50ML", None)]],
-    ["Dior Sauvage", "Parfum Bărbați", "Parfum proaspăt și masculin", 430, [("50 ml", "N/A", 8, "DIORSAUVAGE-50ML", None)]],
-    ["CK One", "Parfum Unisex", "Parfum unisex fresh", 300, [("100 ml", "N/A", 20, "CKONE-100ML", None)]],
-    ["Tom Ford Neroli Portofino", "Parfum Unisex", "Parfum luxos și proaspăt", 550, [("50 ml", "N/A", 5, "TFNEROLI-50ML", None)]],
-    ["Ruj Roșu MAC", "Make-up Buze", "Ruj mat intens", 80, [("Standard", "Roșu", 25, "RUJMAC-RED", None)]],
-    ["Luciu de buze", "Make-up Buze", "Luciu strălucitor", 60, [("Standard", "Nude", 30, "LIPGLOSS-NUDE", None)]],
-    ["Mascara Negru", "Make-up Ochi", "Mascara volum", 90, [("Standard", "Negru", 20, "MASCARA-BLACK", None)]],
-    ["Fard de pleoape", "Make-up Ochi", "Paletă colorată", 120, [("Paletă", "Colorat", 15, "EYESHADOW-COLOR", None)]],
-    ["Eyeliner Negru", "Make-up Ochi", "Liner precis", 70, [("Standard", "Negru", 25, "EYELINER-BLACK", None)]],
-    ["Fond de ten", "Make-up Față", "Acoperire medie", 150, [("30 ml", "Beige", 20, "FOUNDATION-BEIGE", None)]],
-    ["Pudră Translucent", "Make-up Față", "Matifiere fină", 130, [("20 g", "Translucent", 15, "POWDER-TRANSLUCENT", None)]],
-    ["Blush Roz", "Make-up Față", "Accentuare obraji", 100, [("15 g", "Roz", 18, "BLUSH-PINK", None)]],
-    ["Ceas Michael Kors", "Ceasuri", "Ceas elegant unisex", 850, [("Unisex", "Auriu", 5, "MKWATCH-GOLD", None)]],
-    ["Posetă Gucci", "Posete", "Posetă neagră de lux", 2000, [("Standard", "Negru", 3, "GUCCI-BAG-BLACK", None)]],
-    ["Colier Argint", "Bijuterii", "Colier delicat argint", 300, [("45 cm", "Argint", 10, "COLIER-SILVER", None)]],
-    ["Cremă hidratantă", "Îngrijire Corp", "Hidratează pielea", 120, [("50 ml", "N/A", 20, "CREMA-HIDRATANTA", None)]],
-    ["Serum față", "Îngrijire Corp", "Ser facial nutritiv", 180, [("30 ml", "N/A", 15, "SERUM-FATA", None)]],
-    ["Șampon", "Îngrijire Corp", "Șampon pentru toate tipurile de păr", 90, [("250 ml", "N/A", 25, "SHAMPOO", None)]],
-    ["Loțiune corp", "Îngrijire Corp", "Loțiune hidratantă", 100, [("200 ml", "N/A", 20, "LOTION", None)]],
-    ["Set parfum + loțiune", "Parfum Femei", "Set cadou parfum + loțiune", 700, [("50 ml + 200 ml", "N/A", 10, "SET-PARFUM", None)]],
+    # Parfumuri
+    ("YSL Libre", "Parfum elegant floral-fructat", "Parfumuri", ["30 ml", "50 ml", "100 ml"]),
+    ("Lancôme La Vie Est Belle", "Parfum dulce-floral", "Parfumuri", ["30 ml", "50 ml", "100 ml"]),
+    ("Armani Si", "Parfum fructat-chypre", "Parfumuri", ["30 ml", "50 ml", "100 ml"]),
+    ("Viktor&Rolf Flowerbomb", "Parfum oriental-floral", "Parfumuri", ["30 ml", "50 ml", "100 ml"]),
+    ("Prada Paradoxe", "Parfum floral-lemnos", "Parfumuri", ["30 ml", "50 ml", "100 ml"]),
+    ("Paco Rabanne 1 Million", "Parfum lemnos-condimentat", "Parfumuri", ["50 ml", "100 ml"]),
+    ("Versace Eros", "Parfum aromatic-lemnos", "Parfumuri", ["50 ml", "100 ml"]),
+    ("Jean Paul Gaultier Le Male", "Parfum oriental-fresch", "Parfumuri", ["50 ml", "100 ml"]),
+    ("Baccarat Rouge 540", "Parfum lemnos-amber", "Parfumuri", ["50 ml", "100 ml"]),
+    ("Byredo Gypsy Water", "Parfum lemnos-picant", "Parfumuri", ["50 ml", "100 ml"]),
+
+    # Machiaj
+    ("Ruj MAC Matte", "Ruj mat intens", "Machiaj", ["1.5 g"], ["Roșu", "Roz", "Nude"]),
+    ("Estée Lauder Double Wear", "Fond de ten rezistent", "Machiaj", ["30 ml"], ["Bej", "Olive", "Almond"]),
+    ("Too Faced Better Than Sex", "Mascara voluminoasă", "Machiaj", ["10 ml"], ["Negru"]),
+    ("NARS Radiant Concealer", "Corector luminos", "Machiaj", ["6 ml"], ["Bej", "Sand", "Medium"]),
+
+    # Îngrijire corp
+    ("Jo Malone Wood Sage", "Apă de toaletă relaxantă", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Carolina Herrera Good Girl", "Apă de parfum sofisticată", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Mugler Alien", "Parfum floral-oriental", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Valentino Born in Roma", "Parfum floral-lemnos", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Dior Homme Intense", "Parfum lemnos-oriental", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Guerlain Mon Guerlain", "Parfum oriental-floral", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Chanel Coco Mademoiselle", "Parfum floral-lemnos", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Hermès Twilly", "Parfum fresh-floral", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Lancôme Idôle", "Parfum floral-modern", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Dior Sauvage", "Parfum aromatic-fresh", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Tom Ford Black Orchid", "Parfum oriental-floral", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Chanel Bleu de Chanel", "Parfum lemnos-aromatic", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Givenchy L'Interdit", "Parfum floral-oriental", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Yves Saint Laurent Black Opium", "Parfum oriental-vanilat", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Gucci Bloom", "Parfum floral", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Armani Code", "Parfum lemnos-oriental", "Îngrijire corp", ["100 ml", "200 ml"]),
+    ("Burberry Her", "Parfum fructat-floral", "Îngrijire corp", ["100 ml", "200 ml"])
 ]
 
+# -------------------------
+# Creare produse și variante
+# -------------------------
 for p in products_data:
-    cat = category_objs[p[1]]
+    name = p[0]
+    description = p[1]
+    category_name = p[2]
+    sizes = p[3]
+    colors = p[4] if len(p) > 4 else ["Clasic"]
+
+    # slug unic
+    slug = slugify(name)
+
+    # Product
     product, created = Product.objects.get_or_create(
-        name=p[0],
-        slug=slugify(p[0]),
-        category=cat,
-        defaults={
-            'description': p[2],
-            'base_price': p[3],
-        }
+        name=name,
+        slug=slug,
+        category=category_objs[category_name],
+        description=description,
+        base_price=random.randint(50, 300),
+        is_active=True
     )
 
-    # Creare variante
-    for var in p[4]:
-        size, color, stock, sku, price_override = var
-        Variant.objects.get_or_create(
-            product=product,
-            size=size,
-            color=color,
-            stock_quantity=stock,
-            sku=sku,
-            defaults={
-                'price_override': price_override
-            }
-        )
+    # Variants
+    for size in sizes:
+        for color in colors:
+            sku = f"{slug.upper()}-{size.replace(' ', '').upper()}-{color.upper()}"
+            Variant.objects.get_or_create(
+                product=product,
+                size=size,
+                color=color,
+                sku=sku,
+                price_override=None,
+                stock_quantity=random.randint(5, 50),
+                is_active=True
+            )
 
-print("Am terminat! 25 de produse create cu variante.")
+print("✅ 30 produse cu variante create!")
 
