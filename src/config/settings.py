@@ -167,7 +167,8 @@ MESSAGE_TAGS = {
 #EMAIL_HOST_PASSWORD = EMAIL_HOST_PASSWORD
 # DEFAULT_FROM_EMAIL = f'CashOnly eCommerce <{EMAIL_HOST_USER}>'
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+"""
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend')
 EMAIL_HOST = 'smtp.gmail.com'
 #EMAIL_PORT = 587
 EMAIL_PORT = 465
@@ -177,6 +178,28 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = f"CashOnly eCommerce <{os.environ.get('EMAIL_HOST_USER')}>"
 EMAIL_FAIL_SILENTLY = True
+# -------------------------------
+# Default primary key field type
+# -------------------------------
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField' 
+"""
+
+# -------------------------------
+# Email (Resend API - Recomandat pentru Render)
+# -------------------------------
+# Notă: Necesită instalarea librăriei 'django-resend'
+# Adaugă 'django-resend' în requirements.txt
+
+EMAIL_BACKEND = "django_resend.backend.ResendBackend"
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
+
+# Important: Până când îți validezi propriul domeniu în Resend,
+# trebuie să folosești adresa lor de test pentru a putea trimite:
+DEFAULT_FROM_EMAIL = "onboarding@resend.dev"
+
+# Siguranță împotriva blocajelor de server
+EMAIL_FAIL_SILENTLY = True
+
 # -------------------------------
 # Default primary key field type
 # -------------------------------

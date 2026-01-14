@@ -7,7 +7,7 @@ env/
 *.swp
 
 # Django
-db.sqlite3
+src/db.sqlite3
 media/
 staticfiles/
 *.log

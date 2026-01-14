@@ -1,18 +1,21 @@
+import resend  # <--- IMPORT NOU
+import os  # <--- IMPORT NOU
+import threading
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes
 from django.contrib.sites.shortcuts import get_current_site
-
 from .forms import UserRegistrationForm, UserLoginForm, UserUpdateForm
 from .tokens import account_activation_token
-import threading
 
 User = get_user_model()
+
+# Configurare Resend API Key
+resend.api_key = os.environ.get('RESEND_API_KEY')
 
 
 # -------------------------------
@@ -26,35 +29,42 @@ def register_view(request):
             user.is_active = True  # Activat pentru a evita blocarea userului
             user.save()
 
-            # 1. DEFINIM email-ul mai întâi
+            # 1. Pregătim datele pentru email
             current_site = get_current_site(request)
             mail_subject = 'Activate your CashOnly eCommerce account'
-            message = render_to_string('accounts/activation_email.html', {
+
+            # Randăm template-ul HTML pentru email
+            html_message = render_to_string('accounts/activation_email.html', {
                 'user': user,
                 'domain': current_site.domain,
                 'uid': urlsafe_base64_encode(force_bytes(user.pk)),
                 'token': account_activation_token.make_token(user),
             })
-            email = EmailMessage(mail_subject, message, to=[user.email])
 
-            # 2. DEFINIM funcția de trimitere (care acum vede variabila 'email')
+            # 2. Funcția care trimite prin Resend API (nu prin SMTP)
             def send_email_task():
                 try:
-                    email.send(fail_silently=False)
-                    print("LOG: Email trimis cu succes!")
+                    resend.Emails.send({
+                        "from": "onboarding@resend.dev",  # Schimbă după ce verifici domeniul în Resend
+                        "to": user.email,
+                        "subject": mail_subject,
+                        "html": html_message
+                    })
+                    print("LOG: Email trimis cu succes prin Resend API!")
                 except Exception as e:
-                    print(f"LOG EROARE EMAIL: {e}")
+                    print(f"LOG EROARE RESEND: {e}")
 
-            # 3. PORNIM Thread-ul
+            # 3. Pornim Thread-ul pentru a nu bloca utilizatorul
             threading.Thread(target=send_email_task).start()
-
-            # ELIMINAT: email.send() de aici (ar fi trimis a doua oară și ar fi blocat serverul)
 
             messages.success(request, 'Account created! Check your email to activate your account.')
             return redirect('accounts:login')
     else:
         form = UserRegistrationForm()
     return render(request, 'accounts/register.html', {'form': form})
+
+
+# ... restul funcțiilor (login, logout, profile, activate) rămân neschimbate ...
 
 
 # -------------------------------
