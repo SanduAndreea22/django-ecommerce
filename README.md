@@ -2,7 +2,7 @@
 
 **Django E-Commerce** is a full-featured online marketplace platform built with Django. The project has a modular architecture to handle complex retail logic: from product variations, shopping cart, secure checkout, to coupon systems and dashboards for users and admins.
 
-👉 The live site is available here: [https://django-ecommerce-c2s6.onrender.com](https://django-ecommerce-c2s6.onrender.com)
+👉 The live site is available here: https://django-ecommerce-c2s6.onrender.com
 
 ---
 
