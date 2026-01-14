@@ -1,5 +1,5 @@
-import resend  # <--- IMPORT NOU
-import os  # <--- IMPORT NOU
+import resend
+import os
 import threading
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate, get_user_model
