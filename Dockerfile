@@ -2,15 +2,15 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Instalăm dependențele sistemului necesare pentru unele librării Python
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+
+COPY src/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
 
-# Colectăm fișierele statice (pentru designul magazinului)
+COPY src/ .
+
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
