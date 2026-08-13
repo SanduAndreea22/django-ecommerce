@@ -18,6 +18,7 @@ RUN SECRET_KEY=build-time-placeholder python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
-# La fiecare pornire: aplică migrațiile, populează catalogul demo (idempotent - sigur de rulat
-# de mai multe ori) și pornește gunicorn (server de producție, nu manage.py runserver).
-CMD python manage.py migrate --noinput && python manage.py seed_products && gunicorn config.wsgi:application --bind 0.0.0.0:8000
+# La fiecare pornire: aplică migrațiile, creează/actualizează superuserul din
+# DJANGO_SUPERUSER_* env vars (no-op dacă nu sunt setate), populează catalogul
+# demo (idempotent) și pornește gunicorn (server de producție, nu manage.py runserver).
+CMD python manage.py migrate --noinput && python manage.py ensure_superuser && python manage.py seed_products && gunicorn config.wsgi:application --bind 0.0.0.0:8000
