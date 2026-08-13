@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 {% load static %}
 
-<html lang="ro">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Factura #{{ order.order_number }}</title>
+    <title>Invoice #{{ order.order_number }}</title>
     <style>
         body { font-family: 'Helvetica', Arial, sans-serif; margin: 0; padding: 0; color: #333; }
         .container { width: 90%; margin: 0 auto; padding: 20px; }
@@ -26,28 +26,28 @@
                 <img src="{% static 'images/logo.png' %}" alt="Logo MyShop">
             </div>
             <div>
-                <strong>Factura Comanda #{{ order.order_number }}</strong><br>
-                Data: {{ order.created_at|date:"d-m-Y H:i" }}
+                <strong>Invoice — Order #{{ order.order_number }}</strong><br>
+                Date: {{ order.created_at|date:"d-m-Y H:i" }}
             </div>
         </header>
 
-        <h1>Factura</h1>
+        <h1>Invoice</h1>
 
         {% if order.user %}
-<p><strong>Client:</strong> {{ order.user.username }}</p>
+<p><strong>Customer:</strong> {{ order.user.username }}</p>
 {% else %}
-<p><strong>Client:</strong> Guest</p>
+<p><strong>Customer:</strong> Guest</p>
 {% endif %}
         {% if order.shipping_address %}
-        <p><strong>Adresă livrare:</strong> {{ order.shipping_address.full_name }}, {{ order.shipping_address.address_line_1 }}, {{ order.shipping_address.city }}, {{ order.shipping_address.postal_code }}, {{ order.shipping_address.country }}</p>
+        <p><strong>Shipping address:</strong> {{ order.shipping_address.full_name }}, {{ order.shipping_address.address_line_1 }}, {{ order.shipping_address.city }}, {{ order.shipping_address.postal_code }}, {{ order.shipping_address.country }}</p>
         {% endif %}
 
         <table>
             <thead>
                 <tr>
-                    <th>Produs</th>
-                    <th>Cantitate</th>
-                    <th>Preț/buc</th>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Price / unit</th>
                     <th>Total</th>
                 </tr>
             </thead>
@@ -69,7 +69,7 @@
                 {% if order.discount_amount %}
                 <div>Discount: {{ order.discount_amount }} RON</div>
                 {% endif %}
-                <div><strong>Total de plată: {{ order.total_after_discount }} RON</strong></div>
+                <div><strong>Total paid: {{ order.total_after_discount }} RON</strong></div>
             </div>
         </div>
 

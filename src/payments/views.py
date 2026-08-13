@@ -43,7 +43,7 @@ def stripe_checkout(request, order_number):
         return redirect('orders:order_success', order_number=order.order_number)
 
     if not stripe_enabled():
-        messages.error(request, "Plata cu cardul nu este disponibilă momentan.")
+        messages.error(request, "Card payment isn't available right now.")
         return redirect('orders:order_detail', order_id=order.id)
 
     stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -53,7 +53,7 @@ def stripe_checkout(request, order_number):
         line_items=[{
             'price_data': {
                 'currency': 'ron',
-                'product_data': {'name': f'Comandă #{order.order_number}'},
+                'product_data': {'name': f'Order #{order.order_number}'},
                 'unit_amount': int(order.total_after_discount * 100),
             },
             'quantity': 1,
@@ -84,15 +84,15 @@ def stripe_success(request, order_number):
             order.payment_status = 'paid'
             order.save(update_fields=['payment_status'])
             Payment.objects.filter(order=order).update(status='paid')
-            messages.success(request, "Plata a fost confirmată. Mulțumim!")
+            messages.success(request, "Payment confirmed. Thank you!")
             return redirect('orders:order_success', order_number=order.order_number)
 
-    messages.error(request, "Nu am putut confirma plata. Te rugăm să reîncerci.")
+    messages.error(request, "We couldn't confirm your payment. Please try again.")
     return redirect('orders:order_detail', order_id=order.id)
 
 
 @login_required
 def stripe_cancel(request, order_number):
     order = get_object_or_404(Order, order_number=order_number, user=request.user)
-    messages.warning(request, "Plata a fost anulată. Poți reîncerca oricând din pagina comenzii.")
+    messages.warning(request, "Payment was cancelled. You can try again anytime from the order page.")
     return redirect('orders:order_detail', order_id=order.id)

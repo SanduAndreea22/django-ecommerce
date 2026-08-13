@@ -5,8 +5,8 @@ from .services import stripe_enabled
 
 class PaymentMethodForm(forms.Form):
     METHOD_CHOICES = (
-        ('cash', 'Cash / Ramburs'),
-        ('stripe', 'Card (Stripe, test mode)'),
+        ('cash', 'Cash on delivery'),
+        ('stripe', 'Card'),
     )
     method = forms.ChoiceField(choices=METHOD_CHOICES, widget=forms.RadioSelect, initial='cash')
 

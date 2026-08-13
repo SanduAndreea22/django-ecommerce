@@ -91,11 +91,15 @@ def cart_detail(request):
                     request.session['coupon_code'] = coupon.code
                     # Salvăm discount-ul ca string, apoi îl citim ca Decimal
                     request.session['cart_discount'] = str(coupon.calculate_discount(subtotal))
-                    messages.success(request, f"Cuponul {coupon.code} a fost aplicat!")
+                    messages.success(request, f"Coupon {coupon.code} applied!")
                 else:
-                    messages.error(request, "Cuponul nu este valid sau nu se aplică la această comandă.")
+                    messages.error(
+                        request,
+                        "This coupon can't be applied — check that it's still active and that "
+                        "your order meets its minimum value."
+                    )
             except Coupon.DoesNotExist:
-                messages.error(request, "Codul cupon nu există.")
+                messages.error(request, "This coupon code doesn't exist.")
     else:
         form = CouponApplyForm()
 

@@ -13,7 +13,7 @@
                 <img src="{{ item.product.main_image.image.url }}" alt="{{ item.product.name }}">
             {% endif %}
             <h3>{{ item.product.name }}</h3>
-            <p class="price">{{ item.product.base_price }} USD</p>
+            <p class="price">{{ item.product.base_price }} RON</p>
             <a href="{{ item.product.get_absolute_url }}" class="btn">View Product</a>
             <form method="post" action="{% url 'products:toggle_wishlist' item.product.id %}">
                 {% csrf_token %}

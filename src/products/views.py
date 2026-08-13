@@ -116,9 +116,9 @@ def toggle_wishlist(request, product_id):
 
     if not created:
         item.delete()
-        messages.success(request, f"{product.name} a fost eliminat din wishlist.")
+        messages.success(request, f"{product.name} was removed from your wishlist.")
     else:
-        messages.success(request, f"{product.name} a fost adăugat la wishlist.")
+        messages.success(request, f"{product.name} was added to your wishlist.")
 
     next_url = request.POST.get('next')
     if not next_url or not url_has_allowed_host_and_scheme(

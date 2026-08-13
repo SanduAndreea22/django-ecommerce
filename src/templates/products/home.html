@@ -4,7 +4,7 @@
 {% block content %}
 <h1 class="page-title">Welcome to MyShop!</h1>
 
-<p>Check out our latest products:</p>
+<p>Check out our latest products</p>
 
 <div class="product-grid">
     {% for product in latest_products %}
@@ -13,7 +13,7 @@
                 <img src="{{ product.main_image.image.url }}" alt="{{ product.name }}">
             {% endif %}
             <h3>{{ product.name }}</h3>
-            <p class="price">{{ product.base_price }} USD</p>
+            <p class="price">{{ product.base_price }} RON</p>
             <a href="{{ product.get_absolute_url }}" class="btn">View Product</a>
         </div>
     {% empty %}

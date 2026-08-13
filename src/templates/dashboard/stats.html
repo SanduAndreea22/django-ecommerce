@@ -32,7 +32,7 @@
     <tbody>
         {% for row in top_products %}
         <tr>
-            <td>{{ row.variant__product__name|default:"(deleted product)" }}</td>
+            <td>{{ row.variant__product__name|default:"(unavailable variant)" }}</td>
             <td>{{ row.total_sold }}</td>
         </tr>
         {% endfor %}

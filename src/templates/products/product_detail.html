@@ -21,7 +21,7 @@
                 </div>
             {% else %}
                 <div class="main-img-container">
-                    <p>Fără imagini disponibile</p>
+                    <p>No images available</p>
                 </div>
             {% endif %}
         </div>
@@ -38,7 +38,7 @@
             </div>
 
             {% if variants %}
-                <label for="variantSelect">Alege varianta:</label>
+                <label for="variantSelect">Choose a variant:</label>
                 <select id="variantSelect">
                     {% for variant in variants %}
                         <option value="{{ variant.id }}"
@@ -58,7 +58,7 @@
     {% if variants %}
         <input type="hidden" name="variant_id" id="variantInput" value="{{ variants.0.id }}">
     {% endif %}
-    <button type="submit" class="btn">Adaugă în coș</button>
+    <button type="submit" class="btn">Add to cart</button>
 </form>
 
 {% if user.is_authenticated %}
@@ -88,19 +88,19 @@
             const stock = selected.getAttribute('data-stock');
             const price = selected.getAttribute('data-price');
 
-            stockInfo.textContent = `Stoc: ${stock} bucăți disponibile`;
+            stockInfo.textContent = `In stock: ${stock} available`;
             currentPrice.textContent = price;
             if (variantInput) {
                 variantInput.value = selected.value;
             }
 
-            // Schimbă culoarea dacă stocul e zero
+            // Switch color based on stock availability
             stockInfo.style.color = stock > 0 ? "#2f7d4f" : "#c0392b";
-            if(stock <= 0) stockInfo.textContent = "Stoc epuizat";
+            if(stock <= 0) stockInfo.textContent = "Out of stock";
         }
 
         variantSelect.addEventListener('change', updateVariant);
-        updateVariant(); // Initializare
+        updateVariant(); // Initial render
     }
 </script>
 {% endblock %}

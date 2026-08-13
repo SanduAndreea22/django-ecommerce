@@ -28,7 +28,7 @@ def checkout_view(request):
     cart_items = CartItem.objects.filter(user=user).select_related('variant__product')
 
     if not cart_items.exists():
-        messages.warning(request, "Coșul tău este gol!")
+        messages.warning(request, "Your cart is empty!")
         return redirect('cart:cart_detail')
 
     subtotal = sum(
@@ -62,8 +62,8 @@ def checkout_view(request):
                     if item.quantity > variant.stock_quantity:
                         messages.error(
                             request,
-                            f"Stoc insuficient pentru {item.variant.product.name} ({item.variant.size}/{item.variant.color}). "
-                            f"Avem doar {variant.stock_quantity} buc."
+                            f"Not enough stock for {item.variant.product.name} ({item.variant.size}/{item.variant.color}). "
+                            f"Only {variant.stock_quantity} left."
                         )
                         return redirect('cart:cart_detail')
 
@@ -125,7 +125,7 @@ def checkout_view(request):
             request.session.pop('cart_discount', None)
 
             if is_cash:
-                messages.success(request, "Comanda a fost plasată cu succes!")
+                messages.success(request, "Your order was placed successfully!")
                 return redirect('orders:order_success', order_number=order.order_number)
 
             return redirect('payments:stripe_checkout', order_number=order.order_number)
@@ -187,7 +187,7 @@ def cancel_order(request, order_id):
     )
 
     if order.status != 'pending':
-        messages.error(request, 'Comanda nu mai poate fi anulată.')
+        messages.error(request, 'This order can no longer be cancelled.')
         return redirect('orders:order_detail', order_id=order.id)
 
     # Anulăm comanda
@@ -201,7 +201,7 @@ def cancel_order(request, order_id):
             variant.stock_quantity += item.quantity
             variant.save()
 
-    messages.success(request, 'Comanda a fost anulată cu succes și stocul a fost restaurat.')
+    messages.success(request, 'Your order was cancelled and the stock has been restored.')
     return redirect('orders:order_detail', order_id=order.id)
 
 @login_required
