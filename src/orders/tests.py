@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -32,6 +32,7 @@ class CheckoutTests(TestCase):
             'city': 'Bucuresti',
             'postal_code': '010101',
             'country': 'Romania',
+            'method': 'cash',
         }
 
     def test_checkout_decrements_stock_and_creates_order(self):
@@ -80,6 +81,33 @@ class CheckoutTests(TestCase):
 
         coupon.refresh_from_db()
         self.assertEqual(coupon.used_count, 1)
+
+    @override_settings(STRIPE_SECRET_KEY='sk_test_fake', STRIPE_PUBLISHABLE_KEY='pk_test_fake')
+    def test_checkout_with_stripe_creates_pending_order_and_redirects_to_stripe_flow(self):
+        CartItem.objects.create(user=self.user, variant=self.variant, quantity=1)
+        data = dict(self.shipping_data, method='stripe')
+
+        response = self.client.post(reverse('orders:checkout'), data)
+
+        order = Order.objects.get(user=self.user)
+        self.assertEqual(order.payment_method, 'stripe')
+        self.assertEqual(order.payment_status, 'pending')
+        self.assertRedirects(
+            response,
+            reverse('payments:stripe_checkout', args=[order.order_number]),
+            fetch_redirect_response=False,
+        )
+
+        self.variant.refresh_from_db()
+        self.assertEqual(self.variant.stock_quantity, 2)
+
+    def test_checkout_rejects_stripe_when_not_configured(self):
+        CartItem.objects.create(user=self.user, variant=self.variant, quantity=1)
+        data = dict(self.shipping_data, method='stripe')
+
+        self.client.post(reverse('orders:checkout'), data)
+
+        self.assertFalse(Order.objects.filter(user=self.user).exists())
 
     def test_cancel_order_restores_stock(self):
         CartItem.objects.create(user=self.user, variant=self.variant, quantity=2)

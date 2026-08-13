@@ -14,6 +14,7 @@ class Order(models.Model):
     )
     PAYMENT_CHOICES = (
         ('cash', 'Cash'),
+        ('stripe', 'Card (Stripe)'),
     )
 
     user = models.ForeignKey(

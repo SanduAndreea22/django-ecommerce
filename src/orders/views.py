@@ -1,8 +1,5 @@
-import logging
 from decimal import Decimal
 
-from django.conf import settings
-from django.core.mail import send_mail
 from django.db import transaction
 from django.shortcuts import render
 from django.utils.crypto import get_random_string
@@ -10,6 +7,7 @@ from cart.models import CartItem
 from coupons.models import Coupon
 from products.models import Variant
 from .models import OrderItem
+from payments.forms import PaymentMethodForm
 from payments.models import Payment
 from .forms import ShippingAddressForm
 from django.http import HttpResponse
@@ -20,24 +18,6 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from .models import Order
-
-logger = logging.getLogger(__name__)
-
-
-def _send_order_confirmation_email(order):
-    if not order.user or not order.user.email:
-        return
-    try:
-        message = render_to_string('orders/order_confirmation_email.txt', {'order': order})
-        send_mail(
-            subject=f"Comanda ta #{order.order_number} a fost plasată",
-            message=message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[order.user.email],
-            fail_silently=False,
-        )
-    except Exception:
-        logger.exception("Failed to send order confirmation email for order %s", order.order_number)
 
 # ==========================
 # CHECKOUT
@@ -61,8 +41,11 @@ def checkout_view(request):
 
     if request.method == 'POST':
         shipping_form = ShippingAddressForm(request.POST)
+        payment_form = PaymentMethodForm(request.POST)
 
-        if shipping_form.is_valid():
+        if shipping_form.is_valid() and payment_form.is_valid():
+            payment_method = payment_form.cleaned_data['method']
+            is_cash = payment_method == 'cash'
             coupon_code = request.session.get('coupon_code')
 
             with transaction.atomic():
@@ -99,8 +82,8 @@ def checkout_view(request):
                     total_amount=total_after_discount,
                     discount_amount=discount,
                     coupon=coupon,
-                    payment_status='paid',  # cash → plătit la livrare
-                    payment_method='cash',
+                    payment_status='paid' if is_cash else 'pending',
+                    payment_method=payment_method,
                     status='pending'
                 )
 
@@ -130,9 +113,9 @@ def checkout_view(request):
                 # Creăm Payment
                 Payment.objects.create(
                     order=order,
-                    method='cash',
+                    method=payment_method,
                     amount=total_after_discount,
-                    status='paid'
+                    status='paid' if is_cash else 'pending'
                 )
 
                 # Golim coșul și sesiunea
@@ -141,13 +124,15 @@ def checkout_view(request):
             request.session.pop('coupon_code', None)
             request.session.pop('cart_discount', None)
 
-            _send_order_confirmation_email(order)
+            if is_cash:
+                messages.success(request, "Comanda a fost plasată cu succes!")
+                return redirect('orders:order_success', order_number=order.order_number)
 
-            messages.success(request, "Comanda a fost plasată cu succes!")
-            return redirect('orders:order_success', order_number=order.order_number)
+            return redirect('payments:stripe_checkout', order_number=order.order_number)
 
     else:
         shipping_form = ShippingAddressForm()
+        payment_form = PaymentMethodForm()
 
     context = {
         'cart_items': cart_items,
@@ -155,6 +140,7 @@ def checkout_view(request):
         'discount': discount,
         'total': total_after_discount,
         'shipping_form': shipping_form,
+        'payment_form': payment_form,
     }
     return render(request, 'orders/checkout.html', context)
 

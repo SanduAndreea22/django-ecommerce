@@ -4,7 +4,7 @@ from orders.models import Order
 class Payment(models.Model):
     METHOD_CHOICES = (
         ('cash', 'Cash / Ramburs'),
-        # Poți adăuga aici Stripe, PayPal etc.
+        ('stripe', 'Card (Stripe)'),
     )
     STATUS_CHOICES = (
         ('pending', 'Pending'),
