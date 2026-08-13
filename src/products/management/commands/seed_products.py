@@ -1,36 +1,13 @@
-# src/create_products.py
-import os
-import django
 import random
 
+from django.core.management.base import BaseCommand
 from django.utils.text import slugify
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
-django.setup()
 
 from products.models import Category, Product, Variant
 
-# -------------------------------
-# Categories (English)
-# -------------------------------
-categories = [
-    "Body Care",
-    "Fragrance",
-    "Hair Care",
-    "Skincare",
-    "Makeup"
-]
+CATEGORIES = ["Body Care", "Fragrance", "Hair Care", "Skincare", "Makeup"]
 
-category_objs = {}
-for cat_name in categories:
-    slug = slugify(cat_name)
-    cat_obj, _ = Category.objects.get_or_create(name=cat_name, slug=slug)
-    category_objs[cat_name] = cat_obj
-
-# -------------------------------
-# Products (realistic)
-# -------------------------------
-products = [
+PRODUCTS = [
     # Fragrances
     ("Dior J'adore Eau de Parfum", "Fragrance", 120.00, ["50ml", "100ml", "150ml"]),
     ("Chanel No.5 Eau de Parfum", "Fragrance", 130.00, ["50ml", "100ml"]),
@@ -66,47 +43,60 @@ products = [
     ("Urban Decay Naked Eyeshadow Palette", "Makeup", 49.99, ["One Size"]),
 ]
 
-# -------------------------------
-# Realistic colors for products
-# -------------------------------
-colors = {
+COLORS_BY_CATEGORY = {
     "Fragrance": ["Transparent"],
     "Skincare": ["White", "Beige", "Light Pink"],
     "Body Care": ["White", "Beige", "Cream"],
     "Hair Care": ["Clear", "White", "Yellowish"],
-    "Makeup": ["Red", "Pink", "Nude", "Brown", "Black"]
+    "Makeup": ["Red", "Pink", "Nude", "Brown", "Black"],
 }
 
-# -------------------------------
-# Create products & variants
-# -------------------------------
-for name, cat_name, base_price, sizes in products:
-    slug = slugify(name)
-    category = category_objs[cat_name]
 
-    product, created = Product.objects.get_or_create(
-        slug=slug,
-        defaults={
-            "name": name,
-            "category": category,
-            "base_price": base_price,
-            "description": f"{name} - available in various sizes and colors."
-        }
-    )
+class Command(BaseCommand):
+    help = "Populează catalogul cu categorii, produse și variante demo. Sigur de rulat de mai multe ori (idempotent)."
 
-    for size in sizes:
-        for color in colors[cat_name]:
-            sku = f"{slug.upper()}-{size.replace(' ', '').upper()}-{color.upper()}"
-            if not Variant.objects.filter(sku=sku).exists():
-                Variant.objects.create(
-                    product=product,
-                    size=size,
-                    color=color,
-                    price_override=None,
-                    stock_quantity=random.randint(5, 50),
-                    sku=sku
-                )
+    def handle(self, *args, **options):
+        category_objs = {}
+        for name in CATEGORIES:
+            category, _ = Category.objects.get_or_create(name=name, slug=slugify(name))
+            category_objs[name] = category
 
-print("✅ Realistic products and variants created successfully!")
+        products_created = 0
+        variants_created = 0
 
+        for name, category_name, base_price, sizes in PRODUCTS:
+            slug = slugify(name)
+            category = category_objs[category_name]
 
+            product, created = Product.objects.get_or_create(
+                slug=slug,
+                defaults={
+                    "name": name,
+                    "category": category,
+                    "base_price": base_price,
+                    "description": f"{name} - available in various sizes and colors.",
+                },
+            )
+            if created:
+                products_created += 1
+
+            for size in sizes:
+                for color in COLORS_BY_CATEGORY[category_name]:
+                    sku = f"{slug.upper()}-{size.replace(' ', '').upper()}-{color.upper()}"
+                    _, created = Variant.objects.get_or_create(
+                        sku=sku,
+                        defaults={
+                            "product": product,
+                            "size": size,
+                            "color": color,
+                            "price_override": None,
+                            "stock_quantity": random.randint(5, 50),
+                        },
+                    )
+                    if created:
+                        variants_created += 1
+
+        self.stdout.write(self.style.SUCCESS(
+            f"Seed complet: {products_created} produse noi, {variants_created} variante noi "
+            f"({len(category_objs)} categorii)."
+        ))
