@@ -1,0 +1,12 @@
+Salut {{ order.user.username }},
+
+Comanda ta #{{ order.order_number }} a fost înregistrată cu succes.
+
+Produse comandate:
+{% for item in order.items.all %}
+- {{ item.variant.product.name }} ({{ item.variant.size }}/{{ item.variant.color }}) x{{ item.quantity }} - {{ item.total_price }} RON
+{% endfor %}
+Total de plată: {{ order.total_after_discount }} RON
+Metodă de plată: {{ order.get_payment_method_display }}
+
+Îți mulțumim că ai cumpărat de la noi!

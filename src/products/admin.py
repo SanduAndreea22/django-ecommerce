@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, Variant, ProductImage
+from .models import Category, Product, Variant, ProductImage, WishlistItem
 
 
 # =========================
@@ -76,4 +76,15 @@ class VariantAdmin(admin.ModelAdmin):
     )
     list_filter = ('is_active', 'product')
     search_fields = ('product__name', 'sku')
+
+
+# =========================
+# WISHLIST ADMIN
+# =========================
+
+@admin.register(WishlistItem)
+class WishlistItemAdmin(admin.ModelAdmin):
+    list_display = ('user', 'product', 'added_at')
+    list_filter = ('added_at',)
+    search_fields = ('user__username', 'product__name')
 

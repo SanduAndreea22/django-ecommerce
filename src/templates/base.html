@@ -21,6 +21,10 @@
         <a href="{% url 'accounts:profile' user.username %}">Profile</a>
         <a href="{% url 'accounts:logout' %}">Logout</a>
         <a href="{% url 'orders:order_history' %}">My Orders</a>
+        <a href="{% url 'products:wishlist' %}">Wishlist</a>
+        {% if user.is_staff %}
+            <a href="{% url 'dashboard:stats' %}">Dashboard</a>
+        {% endif %}
 
     {% else %}
         <a href="{% url 'accounts:login' %}">Login</a>

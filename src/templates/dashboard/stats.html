@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Store Dashboard</h1>
+
+<div class="dashboard-summary">
+    <div class="dashboard-card">
+        <h3>{{ total_revenue|floatformat:2 }} RON</h3>
+        <p>Total revenue (non-cancelled orders)</p>
+    </div>
+    <div class="dashboard-card">
+        <h3>{{ total_orders }}</h3>
+        <p>Total orders</p>
+    </div>
+    <div class="dashboard-card">
+        <h3>{{ orders_today }}</h3>
+        <p>Orders today</p>
+    </div>
+</div>
+
+<h2>Top selling products</h2>
+{% if top_products %}
+<table class="orders-table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Units sold</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in top_products %}
+        <tr>
+            <td>{{ row.variant__product__name|default:"(deleted product)" }}</td>
+            <td>{{ row.total_sold }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No sales yet.</p>
+{% endif %}
+
+<h2>Low stock ({{ low_stock_threshold }} units or fewer)</h2>
+{% if low_stock_variants %}
+<table class="orders-table">
+    <thead>
+        <tr>
+            <th>Product</th>
+            <th>Variant</th>
+            <th>SKU</th>
+            <th>Stock</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for variant in low_stock_variants %}
+        <tr>
+            <td>{{ variant.product.name }}</td>
+            <td>{{ variant.size }} / {{ variant.color }}</td>
+            <td>{{ variant.sku }}</td>
+            <td>{{ variant.stock_quantity }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No low-stock variants right now.</p>
+{% endif %}
+{% endblock %}

@@ -61,6 +61,16 @@
     <button type="submit" class="btn">Adaugă în coș</button>
 </form>
 
+{% if user.is_authenticated %}
+<form method="post" action="{% url 'products:toggle_wishlist' product.id %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.path }}">
+    <button type="submit" class="btn btn-wishlist">
+        {% if is_wishlisted %}💔 Remove from wishlist{% else %}♥ Add to wishlist{% endif %}
+    </button>
+</form>
+{% endif %}
+
         </div>
 
     </div>

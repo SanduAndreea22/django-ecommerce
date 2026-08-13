@@ -1,5 +1,8 @@
+import logging
 from decimal import Decimal
 
+from django.conf import settings
+from django.core.mail import send_mail
 from django.db import transaction
 from django.shortcuts import render
 from django.utils.crypto import get_random_string
@@ -17,6 +20,24 @@ from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from django.views.decorators.http import require_POST
 from .models import Order
+
+logger = logging.getLogger(__name__)
+
+
+def _send_order_confirmation_email(order):
+    if not order.user or not order.user.email:
+        return
+    try:
+        message = render_to_string('orders/order_confirmation_email.txt', {'order': order})
+        send_mail(
+            subject=f"Comanda ta #{order.order_number} a fost plasată",
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[order.user.email],
+            fail_silently=False,
+        )
+    except Exception:
+        logger.exception("Failed to send order confirmation email for order %s", order.order_number)
 
 # ==========================
 # CHECKOUT
@@ -119,6 +140,8 @@ def checkout_view(request):
 
             request.session.pop('coupon_code', None)
             request.session.pop('cart_discount', None)
+
+            _send_order_confirmation_email(order)
 
             messages.success(request, "Comanda a fost plasată cu succes!")
             return redirect('orders:order_success', order_number=order.order_number)
