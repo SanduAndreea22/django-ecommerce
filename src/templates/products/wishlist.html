@@ -18,7 +18,7 @@
             <form method="post" action="{% url 'products:toggle_wishlist' item.product.id %}">
                 {% csrf_token %}
                 <input type="hidden" name="next" value="{% url 'products:wishlist' %}">
-                <button type="submit" class="btn btn-remove">Remove</button>
+                <button type="submit" class="btn-remove">Remove</button>
             </form>
         </div>
     {% endfor %}

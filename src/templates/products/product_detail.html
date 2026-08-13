@@ -51,7 +51,7 @@
                 </select>
             {% endif %}
 
-            <p id="stockInfo" style="margin-bottom: 20px; font-weight: bold; color: #28a745;"></p>
+            <p id="stockInfo" class="stock-info"></p>
 
             <form method="POST" action="{% url 'cart:add_to_cart' %}">
     {% csrf_token %}
@@ -65,7 +65,7 @@
 <form method="post" action="{% url 'products:toggle_wishlist' product.id %}">
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ request.path }}">
-    <button type="submit" class="btn btn-wishlist">
+    <button type="submit" class="btn-wishlist">
         {% if is_wishlisted %}💔 Remove from wishlist{% else %}♥ Add to wishlist{% endif %}
     </button>
 </form>
@@ -95,7 +95,7 @@
             }
 
             // Schimbă culoarea dacă stocul e zero
-            stockInfo.style.color = stock > 0 ? "#28a745" : "#dc3545";
+            stockInfo.style.color = stock > 0 ? "#2f7d4f" : "#c0392b";
             if(stock <= 0) stockInfo.textContent = "Stoc epuizat";
         }
 

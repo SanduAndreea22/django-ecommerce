@@ -21,11 +21,11 @@ class UserRegistrationForm(UserCreationForm):
 # Formular de login
 class UserLoginForm(AuthenticationForm):
     username = forms.CharField(widget=forms.TextInput(
-        attrs={'class': 'form-control', 'placeholder': 'Username or Email'}),
+        attrs={'placeholder': 'Username or Email'}),
         label="Username or Email*")
 
     password = forms.CharField(widget=forms.PasswordInput(
-        attrs={'class': 'form-control', 'placeholder': 'Password'}))
+        attrs={'placeholder': 'Password'}))
 
 
 # Formular de update user

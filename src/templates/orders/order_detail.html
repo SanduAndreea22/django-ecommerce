@@ -10,7 +10,7 @@
     <p>Data: {{ order.created_at|date:"d-m-Y H:i" }}</p>
 
     {% if order.payment_method == 'stripe' and order.payment_status == 'pending' %}
-        <a class="btn btn-primary" href="{% url 'payments:stripe_checkout' order.order_number %}">
+        <a class="btn" href="{% url 'payments:stripe_checkout' order.order_number %}">
             Reîncearcă plata cu cardul
         </a>
     {% endif %}
@@ -42,33 +42,24 @@
             </tbody>
         </table>
 
-    <a class="btn btn-primary" href="{% url 'orders:download_invoice' order.id %}">
-    Descarcă factura
-</a>
-
-
-
+        <a class="btn" href="{% url 'orders:download_invoice' order.id %}">Descarcă factura</a>
 
         <p><strong>Total comandă: {{ order.total_after_discount }} RON</strong></p>
     {% else %}
         <div class="no-orders">Nu există produse în această comandă.</div>
     {% endif %}
 
-    <hr>
-
     {% if order.status == 'pending' %}
         <form method="post" action="{% url 'orders:cancel_order' order.id %}">
             {% csrf_token %}
-            <button class="btn btn-danger"
+            <button type="submit" class="btn-danger"
                 onclick="return confirm('Sigur vrei să anulezi comanda?');">
                 Anulează comanda
             </button>
         </form>
     {% endif %}
 
-    <br>
-
-    <a class="button" href="{% url 'orders:order_history' %}">
+    <a class="btn-outline" href="{% url 'orders:order_history' %}">
         Înapoi la istoricul comenzilor
     </a>
 </div>

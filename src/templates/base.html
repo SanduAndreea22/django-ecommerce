@@ -10,7 +10,7 @@
 <body>
 
 <header class="header">
-    <div class="container header-flex">
+    <div class="container">
         <a href="/" class="logo">MyShop</a>
        <nav>
     <a href="/">Home</a>
@@ -36,6 +36,14 @@
 </header>
 
 <main class="container">
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
     {% block content %}{% endblock %}
 </main>
 
