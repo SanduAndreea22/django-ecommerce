@@ -6,14 +6,37 @@
 
 ---
 
+## 📸 Screenshots
+
+| Home | Catalog (sort/filter) |
+|:---:|:---:|
+| ![Home](docs/screenshots/home.png) | ![Catalog](docs/screenshots/catalog.png) |
+
+| Product detail | Cart |
+|:---:|:---:|
+| ![Product detail](docs/screenshots/product_detail.png) | ![Cart](docs/screenshots/cart.png) |
+
+| Checkout | Wishlist |
+|:---:|:---:|
+| ![Checkout](docs/screenshots/checkout.png) | ![Wishlist](docs/screenshots/wishlist.png) |
+
+| Staff dashboard |
+|:---:|
+| ![Dashboard](docs/screenshots/dashboard.png) |
+
+---
+
 ## ✨ Key Features
 
-- ✅ **Advanced Product Management** – categories, product variants, and multiple image galleries.
-- ✅ **Dynamic Shopping Cart** – real-time item management and calculations.
-- ✅ **Secure Checkout** – order processing and shipping management.
-- ✅ **Promotion System** – functional coupons and discounts.
+- ✅ **Advanced Product Management** – categories, product variants, multiple image galleries, sorting and filtering (price, category, search).
+- ✅ **Dynamic Shopping Cart** – real-time item management, session-based for guests, merged into the account on login.
+- ✅ **Wishlist** – logged-in users can save products for later.
+- ✅ **Secure Checkout** – stock-safe checkout (transactional, race-condition safe), shipping management, order history and PDF invoices with QR-ready layout.
+- ✅ **Two payment methods** – Cash on delivery, or card payment via **Stripe Checkout (test mode)** when Stripe keys are configured.
+- ✅ **Promotion System** – functional coupons with usage limits and discount tracking.
 - ✅ **User Dashboards** – profiles and order history tracking.
-- ✅ **Admin Tools** – inventory and payment management.
+- ✅ **Staff Dashboard** – revenue, order counts and low-stock alerts for store admins.
+- ✅ **Admin Tools** – inventory and payment management via Django Admin.
 
 ---
 
@@ -22,13 +45,13 @@
 The project is organized into modular apps, each handling a specific domain of the e-commerce ecosystem:
 
 ### 📱 Applications
-- **`accounts`** – custom user models, profiles, and authentication.
-- **`products`** – catalog: categories, products, and variants.
+- **`accounts`** – custom user model, profiles, and authentication.
+- **`products`** – catalog: categories, products, variants, and wishlist.
 - **`cart`** – shopping cart logic (session or database).
 - **`orders`** – order creation, status, and history.
-- **`payments`** – transaction processing and payment verification.
-- **`coupons`** – discount code generation and validation.
-- **`dashboard`** – admin interface and analytics.
+- **`payments`** – cash and Stripe (test mode) transaction processing.
+- **`coupons`** – discount code validation.
+- **`dashboard`** – staff-only sales/inventory analytics.
 
 ---
 
@@ -36,8 +59,8 @@ The project is organized into modular apps, each handling a specific domain of t
 
 | Module | Core Models |
 |:---|:---|
-| **Identity** | `User`, `Profile` |
-| **Catalog** | `Category`, `Product`, `Variant`, `ProductImage` |
+| **Identity** | `CustomUser` |
+| **Catalog** | `Category`, `Product`, `Variant`, `ProductImage`, `WishlistItem` |
 | **Shopping** | `CartItem` |
 | **Checkout** | `Order`, `OrderItem`, `ShippingAddress` |
 | **Financial** | `Payment` |
@@ -47,11 +70,14 @@ The project is organized into modular apps, each handling a specific domain of t
 
 ## 🛠️ Tech Stack
 
-- **Backend:** Django 4.x / Python 3.x
-- **Frontend:** HTML5, CSS3, Bootstrap 5
+- **Backend:** Django 5.x / Python 3.11
+- **Frontend:** HTML5, CSS3
 - **Database:** PostgreSQL (Production) / SQLite (Dev)
+- **Payments:** Stripe Checkout (test mode)
 - **Image Handling:** Pillow
-- **Deployment:** Render / Railway
+- **PDF invoices:** WeasyPrint
+- **Deployment:** Render, via Docker
+- **CI:** GitHub Actions runs `manage.py check` + the test suite on every push/PR
 
 ---
 
@@ -77,10 +103,10 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. **Initialize database and create superuser:**
+4. **Initialize database, seed demo products, and create a superuser:**
 ```text
-python manage.py makemigrations
 python manage.py migrate
+python manage.py seed_products
 python manage.py createsuperuser
 ```
 
@@ -90,6 +116,18 @@ python manage.py runserver
 ```
 
 The server will be available at: `http://127.0.0.1:8000/`
+
+### Optional: enabling card payments (Stripe test mode)
+
+Card checkout only appears when both keys are set as environment variables — without them the site silently falls back to cash-only, so this step can be skipped entirely for local development:
+```text
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+```
+
+### Deploying (Render / Docker)
+
+The Dockerfile runs migrations and `seed_products` automatically on every container start, before launching gunicorn — so the live catalog stays populated without needing shell access to the server (useful on Render's free plan, which doesn't include a Shell).
 
 ---
 
