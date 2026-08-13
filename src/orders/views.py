@@ -1,6 +1,11 @@
+from decimal import Decimal
+
+from django.db import transaction
 from django.shortcuts import render
 from django.utils.crypto import get_random_string
 from cart.models import CartItem
+from coupons.models import Coupon
+from products.models import Variant
 from .models import OrderItem
 from payments.models import Payment
 from .forms import ShippingAddressForm
@@ -19,7 +24,7 @@ from .models import Order
 @login_required
 def checkout_view(request):
     user = request.user
-    cart_items = CartItem.objects.filter(user=user)
+    cart_items = CartItem.objects.filter(user=user).select_related('variant__product')
 
     if not cart_items.exists():
         messages.warning(request, "Coșul tău este gol!")
@@ -30,65 +35,88 @@ def checkout_view(request):
         for item in cart_items
     )
 
-    discount = request.session.get('cart_discount', 0)
+    discount = Decimal(request.session.get('cart_discount', '0'))
     total_after_discount = max(subtotal - discount, 0)
 
     if request.method == 'POST':
         shipping_form = ShippingAddressForm(request.POST)
 
-        # verificare stoc
-        for item in cart_items:
-            if item.quantity > item.variant.stock_quantity:
-                messages.error(
-                    request,
-                    f"Stoc insuficient pentru {item.variant.product.name} ({item.variant.size}/{item.variant.color}). "
-                    f"Avem doar {item.variant.stock_quantity} buc."
-                )
-                return redirect('cart:cart_detail')
-
         if shipping_form.is_valid():
-            order_number = get_random_string(10).upper()
+            coupon_code = request.session.get('coupon_code')
 
-            # Creare comandă
-            order = Order.objects.create(
-                user=user,
-                order_number=order_number,
-                total_amount=total_after_discount,
-                discount_amount=discount,
-                payment_status='paid',  # cash → plătit la livrare
-                payment_method='cash',
-                status='pending'
-            )
+            with transaction.atomic():
+                # Blocăm variantele implicate și reverificăm stocul sub lock,
+                # ca să evităm suprastocarea la checkout-uri concurente.
+                variant_ids = [item.variant_id for item in cart_items]
+                locked_variants = {
+                    v.id: v for v in
+                    Variant.objects.select_for_update().filter(id__in=variant_ids)
+                }
 
-            # Creare OrderItems și scădere stoc
-            for item in cart_items:
-                price = item.variant.price_override or item.variant.product.base_price
-                OrderItem.objects.create(
-                    order=order,
-                    variant=item.variant,
-                    price_at_purchase=price,
-                    quantity=item.quantity
+                for item in cart_items:
+                    variant = locked_variants[item.variant_id]
+                    if item.quantity > variant.stock_quantity:
+                        messages.error(
+                            request,
+                            f"Stoc insuficient pentru {item.variant.product.name} ({item.variant.size}/{item.variant.color}). "
+                            f"Avem doar {variant.stock_quantity} buc."
+                        )
+                        return redirect('cart:cart_detail')
+
+                coupon = None
+                if coupon_code:
+                    coupon = Coupon.objects.filter(code=coupon_code).first()
+                    if coupon and not coupon.is_valid(subtotal):
+                        coupon = None
+
+                order_number = get_random_string(10).upper()
+
+                # Creare comandă
+                order = Order.objects.create(
+                    user=user,
+                    order_number=order_number,
+                    total_amount=total_after_discount,
+                    discount_amount=discount,
+                    coupon=coupon,
+                    payment_status='paid',  # cash → plătit la livrare
+                    payment_method='cash',
+                    status='pending'
                 )
 
-                # scade stocul
-                item.variant.stock_quantity -= item.quantity
-                item.variant.save()
+                # Creare OrderItems și scădere stoc
+                for item in cart_items:
+                    variant = locked_variants[item.variant_id]
+                    price = item.variant.price_override or item.variant.product.base_price
+                    OrderItem.objects.create(
+                        order=order,
+                        variant=variant,
+                        price_at_purchase=price,
+                        quantity=item.quantity
+                    )
 
-            # Salvăm shipping
-            shipping_address = shipping_form.save(commit=False)
-            shipping_address.order = order
-            shipping_address.save()
+                    # scade stocul
+                    variant.stock_quantity -= item.quantity
+                    variant.save()
 
-            # Creăm Payment
-            Payment.objects.create(
-                order=order,
-                method='cash',
-                amount=total_after_discount,
-                status='paid'
-            )
+                if coupon:
+                    coupon.increment_usage()
 
-            # Golim coșul și sesiunea
-            cart_items.delete()
+                # Salvăm shipping
+                shipping_address = shipping_form.save(commit=False)
+                shipping_address.order = order
+                shipping_address.save()
+
+                # Creăm Payment
+                Payment.objects.create(
+                    order=order,
+                    method='cash',
+                    amount=total_after_discount,
+                    status='paid'
+                )
+
+                # Golim coșul și sesiunea
+                cart_items.delete()
+
             request.session.pop('coupon_code', None)
             request.session.pop('cart_discount', None)
 
@@ -131,7 +159,10 @@ def order_history(request):
 # ==========================
 @login_required
 def order_detail(request, order_id):
-    order = get_object_or_404(Order, id=order_id, user=request.user)
+    order = get_object_or_404(
+        Order.objects.prefetch_related('items__variant__product'),
+        id=order_id, user=request.user
+    )
     return render(request, 'orders/order_detail.html', {'order': order})
 
 
@@ -141,7 +172,10 @@ def order_detail(request, order_id):
 @login_required
 @require_POST
 def cancel_order(request, order_id):
-    order = get_object_or_404(Order, id=order_id, user=request.user)
+    order = get_object_or_404(
+        Order.objects.prefetch_related('items__variant'),
+        id=order_id, user=request.user
+    )
 
     if order.status != 'pending':
         messages.error(request, 'Comanda nu mai poate fi anulată.')
@@ -163,7 +197,10 @@ def cancel_order(request, order_id):
 
 @login_required
 def download_invoice(request, order_id):
-    order = get_object_or_404(Order, id=order_id, user=request.user)
+    order = get_object_or_404(
+        Order.objects.select_related('shipping_address', 'user').prefetch_related('items__variant__product'),
+        id=order_id, user=request.user
+    )
 
     html_string = render_to_string('orders/invoice.html', {'order': order})
     html = HTML(string=html_string)

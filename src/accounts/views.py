@@ -1,70 +1,27 @@
-import resend
-import os
-import threading
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout, authenticate, get_user_model
+from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.template.loader import render_to_string
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.utils.encoding import force_bytes
-from django.contrib.sites.shortcuts import get_current_site
 from .forms import UserRegistrationForm, UserLoginForm, UserUpdateForm
-from .tokens import account_activation_token
-
-User = get_user_model()
-
-# Configurare Resend API Key
-resend.api_key = os.environ.get('RESEND_API_KEY')
 
 
 # -------------------------------
-# Register user (with email confirmation)
+# Register user (no email confirmation - demo project)
 # -------------------------------
 def register_view(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            user.is_active = True  # Activat pentru a evita blocarea userului
+            user.is_active = True
             user.save()
 
-            # 1. Pregătim datele pentru email
-            current_site = get_current_site(request)
-            mail_subject = 'Activate your CashOnly eCommerce account'
-
-            # Randăm template-ul HTML pentru email
-            html_message = render_to_string('accounts/activation_email.html', {
-                'user': user,
-                'domain': current_site.domain,
-                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-                'token': account_activation_token.make_token(user),
-            })
-
-            # 2. Funcția care trimite prin Resend API (nu prin SMTP)
-            def send_email_task():
-                try:
-                    resend.Emails.send({
-                        "from": "onboarding@resend.dev",  # Schimbă după ce verifici domeniul în Resend
-                        "to": user.email,
-                        "subject": mail_subject,
-                        "html": html_message
-                    })
-                    print("LOG: Email trimis cu succes prin Resend API!")
-                except Exception as e:
-                    print(f"LOG EROARE RESEND: {e}")
-
-            # 3. Pornim Thread-ul pentru a nu bloca utilizatorul
-            threading.Thread(target=send_email_task).start()
-
-            messages.success(request, 'Account created! Check your email to activate your account.')
-            return redirect('accounts:login')
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, f'Welcome, {user.username}! Your account has been created.')
+            return redirect('accounts:profile', username=user.username)
     else:
         form = UserRegistrationForm()
     return render(request, 'accounts/register.html', {'form': form})
-
-
-# ... restul funcțiilor (login, logout, profile, activate) rămân neschimbate ...
 
 
 # -------------------------------
@@ -115,24 +72,3 @@ def profile_view(request, username):
     else:
         form = UserUpdateForm(instance=request.user)
     return render(request, 'accounts/profile.html', {'form': form})
-
-
-# -------------------------------
-# Activate account via email
-# -------------------------------
-def activate(request, uidb64, token):
-    try:
-        uid = urlsafe_base64_decode(uidb64).decode()
-        user = User.objects.get(pk=uid)
-    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-        user = None
-
-    if user is not None and account_activation_token.check_token(user, token):
-        user.is_active = True
-        user.save()
-        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-        messages.success(request, "Your account has been activated and you are now logged in!")
-        return redirect('accounts:profile', username=user.username)
-    else:
-        messages.error(request, "Activation link is invalid!")
-        return redirect('accounts:login')

@@ -7,6 +7,4 @@ urlpatterns = [
     path("login", views.login_view, name="login"),
     path("logout", views.logout_view, name="logout"),
     path("profile/<username>", views.profile_view, name="profile"),
-    # Dacă folosești activare email
-    path("activate/<uidb64>/<token>", views.activate, name="activate"),
 ]

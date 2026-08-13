@@ -37,6 +37,16 @@ class Product(models.Model):
     def get_absolute_url(self):
         return reverse('products:product_detail', args=[str(self.slug)])
 
+    @property
+    def main_image(self):
+        images = list(self.images.all())
+        if not images:
+            return None
+        for image in images:
+            if image.is_main:
+                return image
+        return images[0]
+
 
 class Variant(models.Model):
     product = models.ForeignKey(

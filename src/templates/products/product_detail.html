@@ -53,10 +53,10 @@
 
             <p id="stockInfo" style="margin-bottom: 20px; font-weight: bold; color: #28a745;"></p>
 
-            <form method="POST" action="{% url 'cart:add_to_cart' product.id %}">
+            <form method="POST" action="{% url 'cart:add_to_cart' %}">
     {% csrf_token %}
     {% if variants %}
-        <input type="hidden" name="variant_id" id="variantInput">
+        <input type="hidden" name="variant_id" id="variantInput" value="{{ variants.0.id }}">
     {% endif %}
     <button type="submit" class="btn">Adaugă în coș</button>
 </form>
@@ -70,6 +70,7 @@
     const variantSelect = document.getElementById('variantSelect');
     const stockInfo = document.getElementById('stockInfo');
     const currentPrice = document.getElementById('currentPrice');
+    const variantInput = document.getElementById('variantInput');
 
     if (variantSelect) {
         function updateVariant() {
@@ -79,6 +80,9 @@
 
             stockInfo.textContent = `Stoc: ${stock} bucăți disponibile`;
             currentPrice.textContent = price;
+            if (variantInput) {
+                variantInput.value = selected.value;
+            }
 
             // Schimbă culoarea dacă stocul e zero
             stockInfo.style.color = stock > 0 ? "#28a745" : "#dc3545";

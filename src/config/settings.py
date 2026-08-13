@@ -1,5 +1,5 @@
 """
-Django settings for Cash-only eCommerce (test with real email).
+Django settings for Cash-only eCommerce.
 """
 import os
 from pathlib import Path
@@ -13,13 +13,32 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # -------------------------------
 # Security
 # -------------------------------
-SECRET_KEY = os.environ.get('SECRET_KEY', 'cheie-temporara-pt-local')
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'cheie-temporara-pt-local'
+    else:
+        raise RuntimeError('SECRET_KEY environment variable must be set when DEBUG=False.')
+
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     'django-ecommerce-c2s6.onrender.com',  # <--- adaugă aici
 ]
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    X_FRAME_OPTIONS = 'DENY'
+    # Render termină TLS la proxy-ul lor și retrimite request-ul prin HTTP intern;
+    # fără asta, SECURE_SSL_REDIRECT ar intra în buclă infinită de redirect.
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # -------------------------------
 # Applications
@@ -144,9 +163,9 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-LOGIN_REDIRECT_URL = 'profile'
-LOGOUT_REDIRECT_URL = 'login'
-LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'products:home'
+LOGOUT_REDIRECT_URL = 'accounts:login'
+LOGIN_URL = 'accounts:login'
 
 # -------------------------------
 # Messages
@@ -161,49 +180,7 @@ MESSAGE_TAGS = {
 }
 
 # -------------------------------
-# Email (Real Gmail for test)
-# -------------------------------
-#EMAIL_HOST_USER = EMAIL_HOST_USER
-#EMAIL_HOST_PASSWORD = EMAIL_HOST_PASSWORD
-# DEFAULT_FROM_EMAIL = f'CashOnly eCommerce <{EMAIL_HOST_USER}>'
-
-"""
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend')
-EMAIL_HOST = 'smtp.gmail.com'
-#EMAIL_PORT = 587
-EMAIL_PORT = 465
-#EMAIL_USE_TLS = True
-EMAIL_USE_SSL = True
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = f"CashOnly eCommerce <{os.environ.get('EMAIL_HOST_USER')}>"
-EMAIL_FAIL_SILENTLY = True
-# -------------------------------
-# Default primary key field type
-# -------------------------------
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField' 
-"""
-
-# -------------------------------
-# Email (Resend API - Recomandat pentru Render)
-# -------------------------------
-# Notă: Necesită instalarea librăriei 'django-resend'
-# Adaugă 'django-resend' în requirements.txt
-
-EMAIL_BACKEND = "django_resend.backend.ResendBackend"
-RESEND_API_KEY = os.environ.get('RESEND_API_KEY')
-
-# Important: Până când îți validezi propriul domeniu în Resend,
-# trebuie să folosești adresa lor de test pentru a putea trimite:
-DEFAULT_FROM_EMAIL = "onboarding@resend.dev"
-
-# Siguranță împotriva blocajelor de server
-EMAIL_FAIL_SILENTLY = True
-
-# -------------------------------
 # Default primary key field type
 # -------------------------------
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-
 

@@ -13,7 +13,6 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
     )
     PAYMENT_CHOICES = (
-        ('paypal', 'PayPal'),
         ('cash', 'Cash'),
     )
 

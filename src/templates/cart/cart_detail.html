@@ -46,7 +46,12 @@
                 </form>
             </td>
             <td>{{ item.item_total|floatformat:2 }} RON</td>
-            <td><a class="cart-remove" href="{% url 'cart:remove_from_cart' item.id %}">Remove</a></td>
+            <td>
+                <form method="post" action="{% url 'cart:remove_from_cart' item.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="cart-remove">Remove</button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
     </tbody>

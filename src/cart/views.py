@@ -1,4 +1,11 @@
+from decimal import Decimal
+
+from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_POST
+
+from coupons.forms import CouponApplyForm
+from coupons.models import Coupon
 from products.models import Variant
 from .models import CartItem
 
@@ -7,7 +14,15 @@ def _get_session_key(request):
         request.session.create()
     return request.session.session_key
 
-def add_to_cart(request, variant_id):
+def _get_owned_cart_item(request, item_id):
+    if request.user.is_authenticated:
+        return get_object_or_404(CartItem, id=item_id, user=request.user)
+    session_key = _get_session_key(request)
+    return get_object_or_404(CartItem, id=item_id, session_key=session_key)
+
+@require_POST
+def add_to_cart(request):
+    variant_id = request.POST.get('variant_id')
     variant = get_object_or_404(Variant, id=variant_id)
 
     if request.user.is_authenticated:
@@ -48,25 +63,15 @@ def merge_session_cart_to_user(request):
             item.session_key = None
             item.save()
 
-from coupons.forms import CouponApplyForm
-from coupons.models import Coupon
-from django.contrib import messages
-
-from decimal import Decimal
-from django.shortcuts import render
-from django.contrib import messages
-from cart.models import CartItem
-from coupons.models import Coupon
-from coupons.forms import CouponApplyForm
 
 def cart_detail(request):
     # Dacă user-ul e logat, mutăm itemele din sesiune în user
     if request.user.is_authenticated:
-        merge_session_cart_to_user(request)  # presupun că ai deja funcția asta
-        items = CartItem.objects.filter(user=request.user)
+        merge_session_cart_to_user(request)
+        items = CartItem.objects.filter(user=request.user).select_related('variant__product')
     else:
-        session_key = _get_session_key(request)  # presupun că ai funcția asta
-        items = CartItem.objects.filter(session_key=session_key)
+        session_key = _get_session_key(request)
+        items = CartItem.objects.filter(session_key=session_key).select_related('variant__product')
 
     # Calculăm subtotal
     subtotal = Decimal('0.00')
@@ -85,7 +90,7 @@ def cart_detail(request):
                 if coupon.is_valid(subtotal):
                     request.session['coupon_code'] = coupon.code
                     # Salvăm discount-ul ca string, apoi îl citim ca Decimal
-                    request.session['coupon_discount'] = str(coupon.calculate_discount(subtotal))
+                    request.session['cart_discount'] = str(coupon.calculate_discount(subtotal))
                     messages.success(request, f"Cuponul {coupon.code} a fost aplicat!")
                 else:
                     messages.error(request, "Cuponul nu este valid sau nu se aplică la această comandă.")
@@ -96,7 +101,7 @@ def cart_detail(request):
 
     # Citim discount-ul din sesiune
     coupon_code = request.session.get('coupon_code')
-    discount_amount = Decimal(request.session.get('coupon_discount', '0.00'))
+    discount_amount = Decimal(request.session.get('cart_discount', '0.00'))
 
     # Calculăm totalul
     total = subtotal - discount_amount
@@ -112,8 +117,9 @@ def cart_detail(request):
     return render(request, 'cart/cart_detail.html', context)
 
 
+@require_POST
 def update_cart(request, item_id):
-    item = get_object_or_404(CartItem, id=item_id)
+    item = _get_owned_cart_item(request, item_id)
 
     quantity = int(request.POST.get('quantity', 1))
 
@@ -126,8 +132,9 @@ def update_cart(request, item_id):
     return redirect('cart:cart_detail')
 
 
+@require_POST
 def remove_from_cart(request, item_id):
-    item = get_object_or_404(CartItem, id=item_id)
+    item = _get_owned_cart_item(request, item_id)
     item.delete()
     return redirect('cart:cart_detail')
 
