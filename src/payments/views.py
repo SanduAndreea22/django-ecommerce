@@ -66,7 +66,10 @@ def stripe_checkout(request, order_number):
         ),
         metadata={'order_number': order.order_number},
     )
-    return redirect(session.url)
+    return render(request, 'payments/redirecting.html', {
+        'order': order,
+        'checkout_url': session.url,
+    })
 
 
 @login_required

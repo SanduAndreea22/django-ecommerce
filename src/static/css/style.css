@@ -436,6 +436,9 @@ select:focus { border-color: var(--color-dark); outline: none; }
 
 .form-container { max-width: var(--container-narrow); margin: 60px auto; }
 .checkout-container { max-width: var(--container-medium); margin: 60px auto; }
+.error-page { text-align: center; }
+.error-page p { color: var(--color-text-muted); margin: 15px 0 25px; }
+.error-page .btn { width: auto; display: inline-block; }
 
 .auth-form { display: flex; flex-direction: column; }
 .auth-form input,
@@ -645,6 +648,13 @@ select:focus { border-color: var(--color-dark); outline: none; }
     accent-color: var(--color-accent);
 }
 .checkout-form .btn { margin-top: 10px; }
+
+.errorlist {
+    list-style: none;
+    color: var(--color-danger);
+    font-size: 13px;
+    margin: 6px 0;
+}
 
 .order-summary {
     margin-top: 25px;

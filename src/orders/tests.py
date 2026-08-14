@@ -49,11 +49,16 @@ class CheckoutTests(TestCase):
     def test_checkout_blocks_when_stock_insufficient(self):
         CartItem.objects.create(user=self.user, variant=self.variant, quantity=10)
 
-        self.client.post(reverse('orders:checkout'), self.shipping_data)
+        response = self.client.post(reverse('orders:checkout'), self.shipping_data)
 
         self.variant.refresh_from_db()
         self.assertEqual(self.variant.stock_quantity, 3)
         self.assertEqual(Order.objects.filter(user=self.user).count(), 0)
+
+        # re-renders checkout with the shipping form preserved, instead of
+        # redirecting and losing what the shopper already typed in
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'John Doe')
 
     def test_checkout_applies_coupon_discount_and_increments_usage(self):
         coupon = Coupon.objects.create(

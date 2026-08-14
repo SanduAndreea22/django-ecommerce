@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Redirecting to payment{% endblock %}
+
+{% block content %}
+<div class="checkout-container error-page">
+    <h2>Taking you to secure payment</h2>
+    <p>
+        We're redirecting you to Stripe, our payment partner, to complete the
+        {{ order.total_after_discount|floatformat:2 }} RON payment for order #{{ order.order_number }}.
+        This page will redirect automatically in a moment.
+    </p>
+    <a href="{{ checkout_url }}" class="btn" id="continueLink">Continue to secure payment</a>
+</div>
+
+<script>
+    setTimeout(function () {
+        window.location.href = document.getElementById('continueLink').href;
+    }, 2000);
+</script>
+{% endblock %}

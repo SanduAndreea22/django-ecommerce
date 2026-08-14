@@ -39,6 +39,19 @@ def add_to_cart(request):
 
     if not created:
         cart_item.quantity += 1
+
+    if variant.stock_quantity <= 0:
+        cart_item.delete()
+        messages.error(request, f"{variant.product.name} is currently out of stock.")
+        return redirect('cart:cart_detail')
+
+    if cart_item.quantity > variant.stock_quantity:
+        cart_item.quantity = variant.stock_quantity
+        messages.warning(
+            request,
+            f"Only {variant.stock_quantity} of {variant.product.name} left in stock — quantity adjusted."
+        )
+
     cart_item.save()
     return redirect('cart:cart_detail')
 
@@ -126,6 +139,13 @@ def update_cart(request, item_id):
     item = _get_owned_cart_item(request, item_id)
 
     quantity = int(request.POST.get('quantity', 1))
+
+    if quantity > item.variant.stock_quantity:
+        quantity = item.variant.stock_quantity
+        messages.warning(
+            request,
+            f"Only {item.variant.stock_quantity} of {item.variant.product.name} left in stock — quantity adjusted."
+        )
 
     if quantity > 0:
         item.quantity = quantity

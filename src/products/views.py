@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db.models import Prefetch
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
@@ -104,7 +105,14 @@ def product_detail(request, slug):
 # ==========================
 @login_required
 def wishlist_view(request):
-    items = WishlistItem.objects.filter(user=request.user).select_related('product__category').prefetch_related('product__images')
+    items = (
+        WishlistItem.objects.filter(user=request.user)
+        .select_related('product__category')
+        .prefetch_related(
+            'product__images',
+            Prefetch('product__variants', queryset=Variant.objects.filter(is_active=True), to_attr='active_variants'),
+        )
+    )
     return render(request, 'products/wishlist.html', {'items': items})
 
 

@@ -65,13 +65,14 @@ class StripeCheckoutTests(TestCase):
         Payment.objects.create(order=self.order, method='stripe', amount=50, status='pending')
 
     @patch('payments.views.stripe.checkout.Session.create')
-    def test_stripe_checkout_redirects_to_hosted_session(self, mock_create):
+    def test_stripe_checkout_shows_redirect_page_with_hosted_session_link(self, mock_create):
         mock_create.return_value = SimpleNamespace(url='https://checkout.stripe.com/test-session')
         self.client.force_login(self.owner)
 
         response = self.client.get(reverse('payments:stripe_checkout', args=[self.order.order_number]))
 
-        self.assertRedirects(response, 'https://checkout.stripe.com/test-session', fetch_redirect_response=False)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'https://checkout.stripe.com/test-session')
         mock_create.assert_called_once()
 
     def test_other_user_cannot_start_stripe_checkout_for_someone_elses_order(self):

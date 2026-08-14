@@ -39,7 +39,7 @@ def login_view(request):
                 messages.success(request, f'Welcome, {user.username}!')
                 return redirect('accounts:profile', username=user.username)
             else:
-                messages.error(request, 'Invalid credentials or inactive account.')
+                messages.error(request, 'Incorrect username or password.')
     else:
         form = UserLoginForm()
     return render(request, 'accounts/login.html', {'form': form})

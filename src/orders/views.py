@@ -63,9 +63,16 @@ def checkout_view(request):
                         messages.error(
                             request,
                             f"Not enough stock for {item.variant.product.name} ({item.variant.size}/{item.variant.color}). "
-                            f"Only {variant.stock_quantity} left."
+                            f"Only {variant.stock_quantity} left. Please adjust your cart before continuing."
                         )
-                        return redirect('cart:cart_detail')
+                        return render(request, 'orders/checkout.html', {
+                            'cart_items': cart_items,
+                            'subtotal': subtotal,
+                            'discount': discount,
+                            'total': total_after_discount,
+                            'shipping_form': shipping_form,
+                            'payment_form': payment_form,
+                        })
 
                 coupon = None
                 if coupon_code:

@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from .models import Category, Product, WishlistItem
+from .models import Category, Product, Variant, WishlistItem
 
 User = get_user_model()
 
@@ -33,3 +33,20 @@ class WishlistTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse('products:wishlist'))
         self.assertNotContains(response, 'Remove')
+
+    def test_wishlist_shows_quick_add_for_single_variant_product(self):
+        Variant.objects.create(product=self.product, size='One Size', color='N/A', stock_quantity=5, sku='SKU-1')
+        WishlistItem.objects.create(user=self.user, product=self.product)
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('products:wishlist'))
+        self.assertContains(response, 'Add to cart')
+
+    def test_wishlist_hides_quick_add_for_multi_variant_product(self):
+        Variant.objects.create(product=self.product, size='S', color='Red', stock_quantity=5, sku='SKU-1')
+        Variant.objects.create(product=self.product, size='M', color='Red', stock_quantity=5, sku='SKU-2')
+        WishlistItem.objects.create(user=self.user, product=self.product)
+
+        self.client.force_login(self.user)
+        response = self.client.get(reverse('products:wishlist'))
+        self.assertNotContains(response, 'Add to cart')

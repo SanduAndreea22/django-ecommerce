@@ -53,3 +53,30 @@ class CartOwnershipTests(TestCase):
         response = self.client.get(reverse('cart:remove_from_cart', args=[self.item.id]))
         self.assertEqual(response.status_code, 405)
         self.assertTrue(CartItem.objects.filter(id=self.item.id).exists())
+
+    def test_update_cart_clamps_quantity_to_available_stock(self):
+        self.client.force_login(self.owner)
+        self.client.post(reverse('cart:update_cart', args=[self.item.id]), {'quantity': 100})
+        self.item.refresh_from_db()
+        self.assertEqual(self.item.quantity, 5)
+
+    def test_update_cart_removes_item_when_variant_out_of_stock(self):
+        self.variant.stock_quantity = 0
+        self.variant.save()
+        self.client.force_login(self.owner)
+        self.client.post(reverse('cart:update_cart', args=[self.item.id]), {'quantity': 3})
+        self.assertFalse(CartItem.objects.filter(id=self.item.id).exists())
+
+    def test_add_to_cart_clamps_quantity_to_available_stock(self):
+        self.client.force_login(self.owner)
+        for _ in range(10):
+            self.client.post(reverse('cart:add_to_cart'), {'variant_id': self.variant.id})
+        item = CartItem.objects.get(user=self.owner, variant=self.variant)
+        self.assertEqual(item.quantity, 5)
+
+    def test_add_to_cart_rejects_out_of_stock_variant(self):
+        self.variant.stock_quantity = 0
+        self.variant.save()
+        self.client.force_login(self.other)
+        self.client.post(reverse('cart:add_to_cart'), {'variant_id': self.variant.id})
+        self.assertFalse(CartItem.objects.filter(user=self.other, variant=self.variant).exists())
