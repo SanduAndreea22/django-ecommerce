@@ -29,8 +29,11 @@
 ## ✨ Key Features
 
 - ✅ **Advanced Product Management** – categories, product variants, multiple image galleries, sorting and filtering (price, category, search).
-- ✅ **Dynamic Shopping Cart** – real-time item management, session-based for guests, merged into the account on login.
+- ✅ **Dynamic Shopping Cart** – real-time item management, session-based for guests, merged into the account on login; adding an item shows an instant toast and updates the header badge with no page reload.
 - ✅ **Wishlist** – logged-in users can save products for later.
+- ✅ **Reviews & Ratings** – 1-5 star reviews with comments, one per user per product, with the average shown on the product page.
+- ✅ **Related Products** – a "You might also like" section on each product page, pulled from the same category.
+- ✅ **Newsletter Signup** – a working email capture form in the footer, with duplicate protection.
 - ✅ **Secure Checkout** – stock-safe checkout (transactional, race-condition safe), shipping management, order history and PDF invoices with QR-ready layout.
 - ✅ **Two payment methods** – Cash on delivery, or card payment via **Stripe Checkout (test mode)** when Stripe keys are configured.
 - ✅ **Promotion System** – functional coupons with usage limits and discount tracking.
@@ -60,10 +63,11 @@ The project is organized into modular apps, each handling a specific domain of t
 | Module | Core Models |
 |:---|:---|
 | **Identity** | `CustomUser` |
-| **Catalog** | `Category`, `Product`, `Variant`, `ProductImage`, `WishlistItem` |
+| **Catalog** | `Category`, `Product`, `Variant`, `ProductImage`, `WishlistItem`, `Review` |
 | **Shopping** | `CartItem` |
 | **Checkout** | `Order`, `OrderItem`, `ShippingAddress` |
 | **Financial** | `Payment` |
+| **Marketing** | `NewsletterSubscriber` |
 | **Marketing** | `Coupon` |
 
 ---
