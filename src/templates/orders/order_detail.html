@@ -17,6 +17,7 @@
     {% endif %}
 
     {% if order.items.exists %}
+        <div class="table-responsive">
         <table class="orders-table">
             <thead>
                 <tr>
@@ -42,12 +43,13 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
 
         <a class="btn" href="{% url 'orders:download_invoice' order.id %}">Download invoice</a>
 
         <p><strong>Order total: {{ order.total_after_discount }} RON</strong></p>
     {% else %}
-        <div class="no-orders">This order has no items.</div>
+        <div class="no-orders">No items found for this order.</div>
     {% endif %}
 
     {% if order.status == 'pending' %}

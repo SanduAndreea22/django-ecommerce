@@ -6,6 +6,7 @@
 <h1 class="cart-title">Your Cart</h1>
 
 {% if items %}
+<div class="table-responsive">
 <table class="cart-table">
     <thead>
         <tr>
@@ -42,7 +43,7 @@
                            min="1"
                            max="{{ item.variant.stock_quantity }}">
                     <button type="submit" class="btn btn-sm">Update</button>
-                    <p class="stock-msg">Stock exceeded!</p>
+                    <p class="stock-msg">That's more than we have in stock — quantity adjusted.</p>
                 </form>
             </td>
             <td>{{ item.item_total|floatformat:2 }} RON</td>
@@ -56,6 +57,7 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 
 <div class="cart-bottom">
     <div class="cart-coupon">
@@ -90,6 +92,9 @@
             <span>{{ total|floatformat:2 }} RON</span>
         </div>
 
+        {% if not user.is_authenticated %}
+            <p class="checkout-account-note">You'll need to log in or create a free account to check out.</p>
+        {% endif %}
         <a href="{% url 'orders:checkout' %}" class="btn">Proceed to Checkout</a>
     </div>
 </div>

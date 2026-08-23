@@ -46,8 +46,8 @@ class Coupon(models.Model):
         return 0
 
     def increment_usage(self):
-        self.used_count += 1
-        self.save()
+        self.used_count = models.F('used_count') + 1
+        self.save(update_fields=['used_count'])
 
 
 

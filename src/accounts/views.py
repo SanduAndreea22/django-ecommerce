@@ -2,7 +2,18 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from .forms import UserRegistrationForm, UserLoginForm, UserUpdateForm
+
+
+def _safe_next_url(request):
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return next_url
+    return None
 
 
 # -------------------------------
@@ -18,10 +29,10 @@ def register_view(request):
 
             login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             messages.success(request, f'Welcome, {user.username}! Your account has been created.')
-            return redirect('accounts:profile', username=user.username)
+            return redirect(_safe_next_url(request) or reverse('accounts:profile', args=[user.username]))
     else:
         form = UserRegistrationForm()
-    return render(request, 'accounts/register.html', {'form': form})
+    return render(request, 'accounts/register.html', {'form': form, 'next': request.GET.get('next', '')})
 
 
 # -------------------------------
@@ -37,12 +48,12 @@ def login_view(request):
             if user is not None:
                 login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                 messages.success(request, f'Welcome, {user.username}!')
-                return redirect('accounts:profile', username=user.username)
+                return redirect(_safe_next_url(request) or reverse('accounts:profile', args=[user.username]))
             else:
                 messages.error(request, 'Incorrect username or password.')
     else:
         form = UserLoginForm()
-    return render(request, 'accounts/login.html', {'form': form})
+    return render(request, 'accounts/login.html', {'form': form, 'next': request.GET.get('next', '')})
 
 
 # -------------------------------

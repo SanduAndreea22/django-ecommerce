@@ -4,6 +4,7 @@ from django.db import transaction
 from django.shortcuts import render
 from django.utils.crypto import get_random_string
 from cart.models import CartItem
+from cart.views import merge_session_cart_to_user
 from coupons.models import Coupon
 from products.models import Variant
 from .models import OrderItem
@@ -25,6 +26,10 @@ from .models import Order
 @login_required
 def checkout_view(request):
     user = request.user
+    # Mutăm și aici itemele rămase în coșul de sesiune (dinainte de login) la user,
+    # ca la un checkout direct (fără să treci prin /cart/ după login) coșul să nu
+    # apară fals gol.
+    merge_session_cart_to_user(request)
     cart_items = CartItem.objects.filter(user=user).select_related('variant__product')
 
     if not cart_items.exists():
@@ -36,7 +41,14 @@ def checkout_view(request):
         for item in cart_items
     )
 
-    discount = Decimal(request.session.get('cart_discount', '0'))
+    # Discount-ul afișat e mereu recalculat din cuponul din sesiune + subtotalul curent,
+    # niciodată citit ca valoare fixă din sesiune (putea rămâne stale/exploatabil dacă
+    # coșul se schimba după aplicarea cuponului).
+    coupon_code = request.session.get('coupon_code')
+    coupon = Coupon.objects.filter(code=coupon_code).first() if coupon_code else None
+    if coupon and not coupon.is_valid(subtotal):
+        coupon = None
+    discount = coupon.calculate_discount(subtotal) if coupon else Decimal('0')
     total_after_discount = max(subtotal - discount, 0)
 
     if request.method == 'POST':
@@ -46,7 +58,6 @@ def checkout_view(request):
         if shipping_form.is_valid() and payment_form.is_valid():
             payment_method = payment_form.cleaned_data['method']
             is_cash = payment_method == 'cash'
-            coupon_code = request.session.get('coupon_code')
 
             with transaction.atomic():
                 # Blocăm variantele implicate și reverificăm stocul sub lock,
@@ -74,11 +85,17 @@ def checkout_view(request):
                             'payment_form': payment_form,
                         })
 
-                coupon = None
-                if coupon_code:
-                    coupon = Coupon.objects.filter(code=coupon_code).first()
-                    if coupon and not coupon.is_valid(subtotal):
-                        coupon = None
+                # Blocăm și rândul cuponului, ca să evităm ca două checkout-uri simultane
+                # să treacă amândouă de verificarea max_uses pentru un cupon cu o singură
+                # folosire disponibilă (recalculăm discountul sub lock, nu doar la POST inițial).
+                order_coupon = None
+                order_discount = Decimal('0')
+                if coupon:
+                    locked_coupon = Coupon.objects.select_for_update().get(pk=coupon.pk)
+                    if locked_coupon.is_valid(subtotal):
+                        order_coupon = locked_coupon
+                        order_discount = locked_coupon.calculate_discount(subtotal)
+                order_total = max(subtotal - order_discount, 0)
 
                 order_number = get_random_string(10).upper()
 
@@ -86,9 +103,9 @@ def checkout_view(request):
                 order = Order.objects.create(
                     user=user,
                     order_number=order_number,
-                    total_amount=total_after_discount,
-                    discount_amount=discount,
-                    coupon=coupon,
+                    total_amount=order_total,
+                    discount_amount=order_discount,
+                    coupon=order_coupon,
                     payment_status='paid' if is_cash else 'pending',
                     payment_method=payment_method,
                     status='pending'
@@ -109,8 +126,8 @@ def checkout_view(request):
                     variant.stock_quantity -= item.quantity
                     variant.save()
 
-                if coupon:
-                    coupon.increment_usage()
+                if order_coupon:
+                    order_coupon.increment_usage()
 
                 # Salvăm shipping
                 shipping_address = shipping_form.save(commit=False)
@@ -121,7 +138,7 @@ def checkout_view(request):
                 Payment.objects.create(
                     order=order,
                     method=payment_method,
-                    amount=total_after_discount,
+                    amount=order_total,
                     status='paid' if is_cash else 'pending'
                 )
 
@@ -188,25 +205,31 @@ def order_detail(request, order_id):
 @login_required
 @require_POST
 def cancel_order(request, order_id):
-    order = get_object_or_404(
-        Order.objects.prefetch_related('items__variant'),
-        id=order_id, user=request.user
-    )
+    with transaction.atomic():
+        order = get_object_or_404(
+            Order.objects.select_for_update().prefetch_related('items__variant'),
+            id=order_id, user=request.user
+        )
 
-    if order.status != 'pending':
-        messages.error(request, 'This order can no longer be cancelled.')
-        return redirect('orders:order_detail', order_id=order.id)
+        if order.status != 'pending':
+            messages.error(request, 'This order can no longer be cancelled.')
+            return redirect('orders:order_detail', order_id=order.id)
 
-    # Anulăm comanda
-    order.status = 'cancelled'
-    order.save()
+        # Anulăm comanda
+        order.status = 'cancelled'
+        order.save()
 
-    # Restaurăm stocul pentru fiecare variantă
-    for item in order.items.all():
-        variant = item.variant
-        if variant:
-            variant.stock_quantity += item.quantity
-            variant.save()
+        # Restaurăm stocul pentru fiecare variantă, cu lock, ca să evităm ca o
+        # anulare dublă (dublu-click/tab-uri concurente) să restaureze stocul de două ori.
+        variant_ids = [item.variant_id for item in order.items.all() if item.variant_id]
+        locked_variants = {
+            v.id: v for v in Variant.objects.select_for_update().filter(id__in=variant_ids)
+        }
+        for item in order.items.all():
+            variant = locked_variants.get(item.variant_id)
+            if variant:
+                variant.stock_quantity += item.quantity
+                variant.save()
 
     messages.success(request, 'Your order was cancelled and the stock has been restored.')
     return redirect('orders:order_detail', order_id=order.id)

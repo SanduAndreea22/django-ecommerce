@@ -3,8 +3,10 @@ import stripe
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from orders.models import Order
@@ -16,6 +18,10 @@ from .services import stripe_enabled
 @require_POST
 def cash_payment(request, order_number):
     order = get_object_or_404(Order, order_number=order_number, user=request.user)
+
+    if order.payment_method != 'cash':
+        messages.error(request, "This order isn't set up for cash payment.")
+        return redirect('orders:order_detail', order_id=order.id)
 
     # Creăm Payment ca plătit automat
     payment, created = Payment.objects.get_or_create(
@@ -99,3 +105,37 @@ def stripe_cancel(request, order_number):
     order = get_object_or_404(Order, order_number=order_number, user=request.user)
     messages.warning(request, "Payment was cancelled. You can try again anytime from the order page.")
     return redirect('orders:order_detail', order_id=order.id)
+
+
+@csrf_exempt
+@require_POST
+def stripe_webhook(request):
+    """
+    Confirmă plata independent de redirect-ul din browser — dacă userul închide
+    tab-ul după plată, webhook-ul e singura cale prin care comanda nu rămâne
+    blocată la 'pending' pentru totdeauna.
+    """
+    if not settings.STRIPE_WEBHOOK_SECRET:
+        return HttpResponse(status=200)
+
+    payload = request.body
+    sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
+
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except (ValueError, stripe.error.SignatureVerificationError):
+        return HttpResponseBadRequest('Invalid payload or signature.')
+
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        order_number = session.get('metadata', {}).get('order_number')
+        if order_number and session.get('payment_status') == 'paid':
+            order = Order.objects.filter(order_number=order_number).first()
+            if order and order.payment_status != 'paid':
+                order.payment_status = 'paid'
+                order.save(update_fields=['payment_status'])
+                Payment.objects.filter(order=order).update(status='paid')
+
+    return HttpResponse(status=200)

@@ -1,29 +1,42 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Login{% endblock %}
 
 {% block content %}
 <div class="form-container">
-    <h2>Login</h2>
+    <h2 class="page-title">Log in</h2>
 
     <form method="POST" class="auth-form" novalidate>
         {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
         {% if form.non_field_errors %}
             <div class="field-error">{{ form.non_field_errors }}</div>
         {% endif %}
         {% for field in form %}
             <div class="form-field">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
+                {% if field.field.widget.input_type == 'password' %}
+                    <div class="password-wrapper">
+                        {{ field }}
+                        <button type="button" class="toggle-password" aria-label="Show password">👁️</button>
+                    </div>
+                {% else %}
+                    {{ field }}
+                {% endif %}
                 {% for error in field.errors %}
                     <div class="field-error">{{ error }}</div>
                 {% endfor %}
             </div>
         {% endfor %}
-        <button type="submit" class="btn">Login</button>
+        <button type="submit" class="btn">Log in</button>
     </form>
 
     <p class="auth-links">
-        <a href="{% url 'accounts:register' %}">Don't have an account? Register</a>
+        <a href="{% url 'accounts:register' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Don't have an account? Register</a>
     </p>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/login.js' %}"></script>
 {% endblock %}

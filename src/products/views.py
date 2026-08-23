@@ -5,9 +5,11 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Prefetch
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
-from .models import Product, Category, Variant, WishlistItem
+from .forms import ReviewForm, NewsletterSubscribeForm
+from .models import Product, Category, Variant, WishlistItem, Review, NewsletterSubscriber
 
 PRODUCTS_PER_PAGE = 12
 
@@ -29,9 +31,18 @@ def _parse_price(value):
         return None
 
 
+_active_variants_prefetch = Prefetch(
+    'variants', queryset=Variant.objects.filter(is_active=True), to_attr='active_variants'
+)
+
+
 # Home view → latest products
 def home(request):
-    latest_products = Product.objects.filter(is_active=True).prefetch_related('images').order_by('-created_at')[:8]
+    latest_products = (
+        Product.objects.filter(is_active=True)
+        .prefetch_related('images', _active_variants_prefetch)
+        .order_by('-created_at')[:8]
+    )
     context = {
         'latest_products': latest_products
     }
@@ -40,7 +51,11 @@ def home(request):
 
 # Catalog / product list
 def product_list(request):
-    products = Product.objects.filter(is_active=True).select_related('category').prefetch_related('images')
+    products = (
+        Product.objects.filter(is_active=True)
+        .select_related('category')
+        .prefetch_related('images', _active_variants_prefetch)
+    )
     categories = Category.objects.filter(is_active=True)
 
     # SEARCH
@@ -92,10 +107,42 @@ def product_detail(request, slug):
         and WishlistItem.objects.filter(user=request.user, product=product).exists()
     )
 
+    existing_review = None
+    if request.user.is_authenticated:
+        existing_review = Review.objects.filter(product=product, user=request.user).first()
+
+    if request.method == 'POST' and 'rating' in request.POST:
+        if not request.user.is_authenticated:
+            messages.error(request, "Please log in to leave a review.")
+            return redirect('accounts:login')
+
+        review_form = ReviewForm(request.POST, instance=existing_review)
+        if review_form.is_valid():
+            review = review_form.save(commit=False)
+            review.product = product
+            review.user = request.user
+            review.save()
+            messages.success(request, "Thanks for your review!")
+            return redirect(product.get_absolute_url())
+    else:
+        review_form = ReviewForm(instance=existing_review)
+
+    reviews = product.reviews.select_related('user').all()
+
+    similar_products = (
+        Product.objects.filter(category=product.category, is_active=True)
+        .exclude(id=product.id)
+        .prefetch_related('images')[:4]
+    )
+
     context = {
         'product': product,
         'variants': variants,
         'is_wishlisted': is_wishlisted,
+        'reviews': reviews,
+        'review_form': review_form,
+        'existing_review': existing_review,
+        'similar_products': similar_products,
     }
     return render(request, 'products/product_detail.html', context)
 
@@ -133,6 +180,29 @@ def toggle_wishlist(request, product_id):
         next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
     ):
         next_url = product.get_absolute_url()
+    return redirect(next_url)
+
+
+# ==========================
+# NEWSLETTER (footer)
+# ==========================
+@require_POST
+def subscribe_newsletter(request):
+    next_url = request.POST.get('next')
+    if not next_url or not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = reverse('products:home')
+
+    form = NewsletterSubscribeForm(request.POST)
+    if form.is_valid():
+        _, created = NewsletterSubscriber.objects.get_or_create(email=form.cleaned_data['email'])
+        if created:
+            messages.success(request, "You're subscribed! Thanks for joining.")
+        else:
+            messages.info(request, "You're already subscribed — thanks!")
+    else:
+        messages.error(request, "Please enter a valid email address.")
     return redirect(next_url)
 
 

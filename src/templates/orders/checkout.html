@@ -5,18 +5,22 @@
 
 {% block content %}
 <div class="checkout-container">
-    <h2>Checkout</h2>
+    <h2 class="page-title">Checkout</h2>
 
     <form method="post" class="checkout-form">
         {% csrf_token %}
 
         <!-- Shipping Address -->
-        <h3>Shipping Address</h3>
-        {{ shipping_form.as_p }}
+        <div class="checkout-section">
+            <h3>Shipping Address</h3>
+            {{ shipping_form.as_p }}
+        </div>
 
         <!-- Payment Method -->
-        <h3>Payment Method</h3>
-        {{ payment_form.as_p }}
+        <div class="checkout-section">
+            <h3>Payment Method</h3>
+            {{ payment_form.as_p }}
+        </div>
 
         <!-- Order Summary -->
         <div class="order-summary">

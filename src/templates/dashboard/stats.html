@@ -8,7 +8,7 @@
 <div class="dashboard-summary">
     <div class="dashboard-card">
         <h3>{{ total_revenue|floatformat:2 }} RON</h3>
-        <p>Total revenue (non-cancelled orders)</p>
+        <p>Total revenue (excluding cancelled orders)</p>
     </div>
     <div class="dashboard-card">
         <h3>{{ total_orders }}</h3>
@@ -32,7 +32,7 @@
     <tbody>
         {% for row in top_products %}
         <tr>
-            <td>{{ row.variant__product__name|default:"(unavailable variant)" }}</td>
+            <td>{{ row.variant__product__name|default:"(product no longer available)" }}</td>
             <td>{{ row.total_sold }}</td>
         </tr>
         {% endfor %}

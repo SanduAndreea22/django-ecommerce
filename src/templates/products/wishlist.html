@@ -11,12 +11,14 @@
         <div class="product-card">
             {% if item.product.main_image %}
                 <img src="{{ item.product.main_image.image.url }}" alt="{{ item.product.name }}">
+            {% else %}
+                <div class="product-card-noimg">No image</div>
             {% endif %}
             <h3>{{ item.product.name }}</h3>
             <p class="price">{{ item.product.base_price }} RON</p>
             <a href="{{ item.product.get_absolute_url }}" class="btn">View Product</a>
             {% if item.product.active_variants|length == 1 %}
-                <form method="post" action="{% url 'cart:add_to_cart' %}">
+                <form method="post" action="{% url 'cart:add_to_cart' %}" class="add-to-cart-form">
                     {% csrf_token %}
                     <input type="hidden" name="variant_id" value="{{ item.product.active_variants.0.id }}">
                     <button type="submit" class="btn-outline">Add to cart</button>

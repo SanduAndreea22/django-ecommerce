@@ -8,6 +8,7 @@
     <h1 class="page-title">Order History</h1>
 
     {% if orders %}
+        <div class="table-responsive">
         <table class="orders-table">
             <thead>
                 <tr>
@@ -32,6 +33,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     {% else %}
         <div class="no-orders">
             You haven't placed any orders yet.

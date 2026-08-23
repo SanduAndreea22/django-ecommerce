@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 
@@ -47,6 +48,17 @@ class Product(models.Model):
             if image.is_main:
                 return image
         return images[0]
+
+    @property
+    def average_rating(self):
+        reviews = list(self.reviews.all())
+        if not reviews:
+            return None
+        return sum(r.rating for r in reviews) / len(reviews)
+
+    @property
+    def review_count(self):
+        return len(self.reviews.all())
 
 
 class Variant(models.Model):
@@ -102,3 +114,36 @@ class WishlistItem(models.Model):
 
     def __str__(self):
         return f"{self.user} ♥ {self.product}"
+
+
+class Review(models.Model):
+    product = models.ForeignKey(
+        Product,
+        related_name='reviews',
+        on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        related_name='product_reviews',
+        on_delete=models.CASCADE
+    )
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)]
+    )
+    comment = models.TextField(max_length=1000, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('product', 'user')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user} — {self.product} ({self.rating}★)"
+
+
+class NewsletterSubscriber(models.Model):
+    email = models.EmailField(unique=True)
+    subscribed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.email

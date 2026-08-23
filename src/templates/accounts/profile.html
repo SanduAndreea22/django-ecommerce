@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}My Profile{% endblock %}
 
 {% block content %}
@@ -6,7 +7,11 @@
 
 <div class="profile-container">
     <div class="profile-photo">
-        <img src="{{ user.image.url }}" alt="{{ user.username }}">
+        {% if user.image and user.image.name != 'default/user.jpg' %}
+            <img src="{{ user.image.url }}" alt="{{ user.username }}">
+        {% else %}
+            <img src="{% static 'images/default-avatar.jpg' %}" alt="{{ user.username }}">
+        {% endif %}
     </div>
     <div class="profile-fields">
         <form method="POST" enctype="multipart/form-data" class="auth-form">
@@ -25,7 +30,7 @@
             {% endfor %}
             <div class="form-actions">
                 <button type="submit" class="btn">Save Changes</button>
-                <a href="{% url 'accounts:logout' %}" class="btn-danger">Logout</a>
+                <a href="{% url 'accounts:logout' %}" class="btn-danger">Log out</a>
             </div>
         </form>
     </div>

@@ -10,6 +10,14 @@ class UserRegistrationForm(UserCreationForm):
         model = get_user_model()
         fields = ['first_name', 'last_name', 'username', 'email', 'password1', 'password2']
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].help_text = 'Use letters and numbers, no spaces. Max 150 characters.'
+        self.fields['password1'].help_text = (
+            'At least 8 characters. Avoid common passwords or ones made only of numbers.'
+        )
+        self.fields['password2'].help_text = ''
+
     def save(self, commit=True):
         user = super(UserRegistrationForm, self).save(commit=False)
         user.email = self.cleaned_data['email']

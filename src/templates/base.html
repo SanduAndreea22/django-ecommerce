@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>{% block title %}Shop{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{% static 'images/favicon.ico' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 <body>
@@ -15,11 +16,11 @@
        <nav>
     <a href="/">Home</a>
     <a href="/products/">Catalog</a>
-    <a href="/cart/">Cart</a>
+    <a href="/cart/">Cart{% if cart_count %} <span class="cart-badge" id="cart-badge">{{ cart_count }}</span>{% endif %}</a>
 
     {% if user.is_authenticated %}
         <a href="{% url 'accounts:profile' user.username %}">Profile</a>
-        <a href="{% url 'accounts:logout' %}">Logout</a>
+        <a href="{% url 'accounts:logout' %}">Log out</a>
         <a href="{% url 'orders:order_history' %}">My Orders</a>
         <a href="{% url 'products:wishlist' %}">Wishlist</a>
         {% if user.is_staff %}
@@ -27,7 +28,7 @@
         {% endif %}
 
     {% else %}
-        <a href="{% url 'accounts:login' %}">Login</a>
+        <a href="{% url 'accounts:login' %}">Log in</a>
         <a href="{% url 'accounts:register' %}">Register</a>
     {% endif %}
 </nav>
@@ -48,8 +49,27 @@
 </main>
 
 <footer class="footer">
-    <p>© {{ now|date:"Y" }} MyShop</p>
+    <div class="trust-badges">
+        <span>🔒 Secure checkout</span>
+        <span>💳 Card &amp; cash on delivery</span>
+        <span>📦 Track every order in your account</span>
+    </div>
+
+    <form method="post" action="{% url 'products:subscribe_newsletter' %}" class="newsletter-form">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <label for="newsletter-email">Get new arrivals &amp; offers by email</label>
+        <div class="newsletter-fields">
+            <input type="email" name="email" id="newsletter-email" placeholder="you@example.com" required>
+            <button type="submit" class="btn-outline">Subscribe</button>
+        </div>
+    </form>
+
+    <p>© {% now "Y" %} MyShop</p>
 </footer>
+
+<script src="{% static 'js/cart.js' %}"></script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>
 
