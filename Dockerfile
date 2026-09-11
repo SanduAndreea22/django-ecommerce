@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
@@ -15,6 +15,13 @@ COPY src/ .
 # dar la build time Render nu garantează variabilele de mediu din Environment.
 # Colectarea fișierelor statice nu are nevoie de o cheie reală, doar de una prezentă.
 RUN SECRET_KEY=build-time-placeholder python manage.py collectstatic --noinput
+
+# Rulează ca user neprivilegiat, nu root; media/ trebuie să existe și să fie
+# scriibil de acest user (whitenoise/staticfiles rămân doar citite).
+RUN useradd --create-home appuser \
+    && mkdir -p media \
+    && chown -R appuser:appuser /app
+USER appuser
 
 EXPOSE 8000
 

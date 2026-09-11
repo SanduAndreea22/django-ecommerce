@@ -9,15 +9,3 @@ class ShippingAddressForm(forms.ModelForm):
             'city', 'postal_code', 'country'
         ]
         widgets = {field: forms.TextInput(attrs={'class': 'form-control'}) for field in fields}
-
-
-
-class CouponApplyForm(forms.Form):
-    code = forms.CharField(
-        max_length=50,
-        required=False,
-        widget=forms.TextInput(attrs={
-            'placeholder': 'Enter coupon code',
-            'class': 'form-control'
-        })
-    )

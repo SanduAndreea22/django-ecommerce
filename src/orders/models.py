@@ -53,9 +53,14 @@ class OrderItem(models.Model):
     def total_price(self):
         if self.price_at_purchase is not None:
             price = self.price_at_purchase
+        elif self.variant is None:
+            # Variantă ștearsă (on_delete=SET_NULL) și, cumva, fără preț salvat
+            # la achiziție — nu avem de unde recupera prețul.
+            price = 0
+        elif self.variant.price_override is not None:
+            price = self.variant.price_override
         else:
-            # fallback: dacă price_at_purchase lipsă, folosim price_override sau base_price
-            price = self.variant.price_override if self.variant and self.variant.price_override is not None else self.variant.product.base_price
+            price = self.variant.product.base_price
         return price * self.quantity
 
 

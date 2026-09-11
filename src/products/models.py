@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Avg, Count
+from django.utils.functional import cached_property
 from django.utils.text import slugify
 
 class Category(models.Model):
@@ -49,16 +51,19 @@ class Product(models.Model):
                 return image
         return images[0]
 
+    @cached_property
+    def _rating_stats(self):
+        # Un singur query de agregare la nivel de DB, în loc să încărcăm toate
+        # rândurile din `reviews` în Python doar ca să le mediem/numărăm.
+        return self.reviews.aggregate(avg=Avg('rating'), count=Count('id'))
+
     @property
     def average_rating(self):
-        reviews = list(self.reviews.all())
-        if not reviews:
-            return None
-        return sum(r.rating for r in reviews) / len(reviews)
+        return self._rating_stats['avg']
 
     @property
     def review_count(self):
-        return len(self.reviews.all())
+        return self._rating_stats['count']
 
 
 class Variant(models.Model):

@@ -22,10 +22,10 @@ if not SECRET_KEY:
     else:
         raise RuntimeError('SECRET_KEY environment variable must be set when DEBUG=False.')
 
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'django-ecommerce-c2s6.onrender.com',  # <--- adaugă aici
+ALLOWED_HOSTS = ['localhost', '127.0.0.1'] + [
+    host.strip()
+    for host in os.environ.get('ALLOWED_HOSTS', 'django-ecommerce-c2s6.onrender.com').split(',')
+    if host.strip()
 ]
 
 if not DEBUG:

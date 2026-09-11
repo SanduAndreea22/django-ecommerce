@@ -31,9 +31,13 @@
                 {% for item in order.items.all %}
                 <tr>
                     <td>
-                        {{ item.variant.product.name }}
-                        {% if item.variant.name %}
-                            ({{ item.variant.name }})
+                        {% if item.variant %}
+                            {{ item.variant.product.name }}
+                            {% if item.variant.name %}
+                                ({{ item.variant.name }})
+                            {% endif %}
+                        {% else %}
+                            (product no longer available)
                         {% endif %}
                     </td>
                     <td>{{ item.quantity }}</td>

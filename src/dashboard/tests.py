@@ -30,10 +30,12 @@ class DashboardAccessTests(TestCase):
         response = self.client.get(reverse('dashboard:stats'))
         self.assertEqual(response.status_code, 302)
 
-    def test_non_staff_redirected(self):
+    def test_non_staff_gets_forbidden(self):
+        # Autentificat, dar fără is_staff: 403, nu un redirect spre login (ar fi
+        # confuz — userul e deja logat, nu are ce recunoaște la login din nou).
         self.client.force_login(self.customer)
         response = self.client.get(reverse('dashboard:stats'))
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)
 
     def test_staff_can_view_stats(self):
         self.client.force_login(self.staff)

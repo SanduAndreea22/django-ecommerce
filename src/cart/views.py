@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Sum
 from django.http import JsonResponse
 from django.utils import timezone
@@ -17,11 +18,15 @@ def _get_session_key(request):
         request.session.create()
     return request.session.session_key
 
-def _get_owned_cart_item(request, item_id):
+def _get_owned_cart_item(request, item_id, for_update=False):
     if request.user.is_authenticated:
-        return get_object_or_404(CartItem, id=item_id, user=request.user)
-    session_key = _get_session_key(request)
-    return get_object_or_404(CartItem, id=item_id, session_key=session_key)
+        qs = CartItem.objects.filter(id=item_id, user=request.user)
+    else:
+        session_key = _get_session_key(request)
+        qs = CartItem.objects.filter(id=item_id, session_key=session_key)
+    if for_update:
+        qs = qs.select_for_update()
+    return get_object_or_404(qs)
 
 def _is_ajax(request):
     return request.headers.get('X-Requested-With') == 'XMLHttpRequest'
@@ -50,37 +55,37 @@ def add_to_cart(request):
     if not variant_id or not variant_id.isdigit():
         return _add_to_cart_response(request, False, "Please choose a valid product option.", 'error')
 
-    variant = Variant.objects.filter(id=variant_id, is_active=True).first()
-    if not variant:
-        return _add_to_cart_response(request, False, "This product option isn't available anymore.", 'error')
+    # transaction.atomic() + select_for_update() ca să evităm un "lost update" pe
+    # quantity când vin două request-uri de add_to_cart aproape simultane pentru
+    # același item (dublu-click, tab-uri multiple) — fără lock, ambele ar citi
+    # aceeași cantitate veche și una dintre incrementări s-ar pierde.
+    with transaction.atomic():
+        variant = Variant.objects.select_for_update().filter(id=variant_id, is_active=True).first()
+        if not variant:
+            return _add_to_cart_response(request, False, "This product option isn't available anymore.", 'error')
 
-    if request.user.is_authenticated:
-        cart_item, created = CartItem.objects.get_or_create(
-            user=request.user,
-            variant=variant
-        )
-    else:
-        session_key = _get_session_key(request)
-        cart_item, created = CartItem.objects.get_or_create(
-            session_key=session_key,
-            variant=variant
-        )
+        if request.user.is_authenticated:
+            owner_filter = {'user': request.user}
+        else:
+            owner_filter = {'session_key': _get_session_key(request)}
 
-    if not created:
-        cart_item.quantity += 1
+        cart_item, created = CartItem.objects.get_or_create(variant=variant, **owner_filter)
+        if not created:
+            cart_item = CartItem.objects.select_for_update().get(pk=cart_item.pk)
+            cart_item.quantity += 1
 
-    if variant.stock_quantity <= 0:
-        cart_item.delete()
-        return _add_to_cart_response(
-            request, False, f"{variant.product.name} is currently out of stock.", 'error'
-        )
+        if variant.stock_quantity <= 0:
+            cart_item.delete()
+            return _add_to_cart_response(
+                request, False, f"{variant.product.name} is currently out of stock.", 'error'
+            )
 
-    adjusted = False
-    if cart_item.quantity > variant.stock_quantity:
-        cart_item.quantity = variant.stock_quantity
-        adjusted = True
+        adjusted = False
+        if cart_item.quantity > variant.stock_quantity:
+            cart_item.quantity = variant.stock_quantity
+            adjusted = True
 
-    cart_item.save()
+        cart_item.save()
 
     if adjusted:
         return _add_to_cart_response(
@@ -100,16 +105,25 @@ def merge_session_cart_to_user(request):
     if not session_key:
         return
 
-    session_items = CartItem.objects.filter(session_key=session_key)
-    for item in session_items:
-        existing_item = CartItem.objects.filter(user=request.user, variant=item.variant).first()
-        if existing_item:
-            existing_item.quantity += item.quantity
-            existing_item.save()
-        else:
-            item.user = request.user
-            item.session_key = None
-            item.save()
+    with transaction.atomic():
+        session_items = CartItem.objects.select_for_update().filter(session_key=session_key)
+        for item in session_items:
+            existing_item = (
+                CartItem.objects.select_for_update()
+                .filter(user=request.user, variant=item.variant)
+                .first()
+            )
+            if existing_item:
+                existing_item.quantity += item.quantity
+                existing_item.save()
+                # Rândul de sesiune a fost deja "absorbit" în cel al userului —
+                # trebuie șters, altfel rămâne orfan (fără user, cu session_key
+                # vechi) în tabel pentru totdeauna după login.
+                item.delete()
+            else:
+                item.user = request.user
+                item.session_key = None
+                item.save()
 
 
 def cart_detail(request):
@@ -183,26 +197,27 @@ def cart_detail(request):
 
 @require_POST
 def update_cart(request, item_id):
-    item = _get_owned_cart_item(request, item_id)
-
     try:
         quantity = int(request.POST.get('quantity', 1))
     except (TypeError, ValueError):
         messages.error(request, "Please enter a valid quantity.")
         return redirect('cart:cart_detail')
 
-    if quantity > item.variant.stock_quantity:
-        quantity = item.variant.stock_quantity
-        messages.warning(
-            request,
-            f"Only {item.variant.stock_quantity} of {item.variant.product.name} left in stock — quantity adjusted."
-        )
+    with transaction.atomic():
+        item = _get_owned_cart_item(request, item_id, for_update=True)
 
-    if quantity > 0:
-        item.quantity = quantity
-        item.save()
-    else:
-        item.delete()
+        if quantity > item.variant.stock_quantity:
+            quantity = item.variant.stock_quantity
+            messages.warning(
+                request,
+                f"Only {item.variant.stock_quantity} of {item.variant.product.name} left in stock — quantity adjusted."
+            )
+
+        if quantity > 0:
+            item.quantity = quantity
+            item.save()
+        else:
+            item.delete()
 
     return redirect('cart:cart_detail')
 

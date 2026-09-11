@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
+from .decorators import user_not_authenticated
 from .forms import UserRegistrationForm, UserLoginForm, UserUpdateForm
 
 
@@ -19,6 +20,7 @@ def _safe_next_url(request):
 # -------------------------------
 # Register user (no email confirmation - demo project)
 # -------------------------------
+@user_not_authenticated
 def register_view(request):
     if request.method == 'POST':
         form = UserRegistrationForm(request.POST)
@@ -38,6 +40,7 @@ def register_view(request):
 # -------------------------------
 # Login user
 # -------------------------------
+@user_not_authenticated
 def login_view(request):
     if request.method == 'POST':
         form = UserLoginForm(request, data=request.POST)

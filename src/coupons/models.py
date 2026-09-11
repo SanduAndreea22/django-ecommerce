@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
@@ -20,9 +21,20 @@ class Coupon(models.Model):
 
     class Meta:
          ordering = ['-valid_from']
+         constraints = [
+             models.CheckConstraint(
+                 check=models.Q(valid_from__lt=models.F('valid_to')),
+                 name='coupon_valid_from_before_valid_to',
+             ),
+         ]
 
     def __str__(self):
         return f"{self.code} ({self.discount_type} - {self.discount_value})"
+
+    def clean(self):
+        super().clean()
+        if self.valid_from and self.valid_to and self.valid_from >= self.valid_to:
+            raise ValidationError("'Valid from' must be before 'valid to'.")
 
     def is_valid(self, order_total=None):
         now = timezone.now()

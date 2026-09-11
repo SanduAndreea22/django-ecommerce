@@ -53,9 +53,18 @@ COLORS_BY_CATEGORY = {
 
 
 class Command(BaseCommand):
-    help = "Populează catalogul cu categorii, produse și variante demo. Sigur de rulat de mai multe ori (idempotent)."
+    help = (
+        "Populează catalogul cu categorii, produse și variante demo. Sigur de rulat "
+        "de mai multe ori — dar face un no-op rapid dacă catalogul e deja populat, "
+        "ca să nu repete ~150 de query-uri get_or_create la fiecare pornire a "
+        "containerului (vezi CMD din Dockerfile)."
+    )
 
     def handle(self, *args, **options):
+        if Product.objects.exists():
+            self.stdout.write("Catalog already seeded — skipping.")
+            return
+
         category_objs = {}
         for name in CATEGORIES:
             category, _ = Category.objects.get_or_create(name=name, slug=slugify(name))

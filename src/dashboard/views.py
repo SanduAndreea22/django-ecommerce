@@ -1,4 +1,7 @@
-from django.contrib.auth.decorators import user_passes_test
+from functools import wraps
+
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db.models import Sum
 from django.shortcuts import render
 from django.utils import timezone
@@ -9,11 +12,23 @@ from products.models import Variant
 LOW_STOCK_THRESHOLD = 5
 
 
-def _is_staff(user):
-    return user.is_authenticated and user.is_staff
+def staff_required(view_func):
+    """
+    Diferit de user_passes_test(is_staff, login_url=...): un user autentificat
+    dar fără is_staff primea acolo un redirect spre login (confuz — "de ce mi se
+    cere din nou să mă loghez?"). Aici userii anonimi sunt trimiși la login, dar
+    userii autentificați neautorizați primesc direct 403.
+    """
+    @wraps(view_func)
+    @login_required(login_url='accounts:login')
+    def _wrapped(request, *args, **kwargs):
+        if not request.user.is_staff:
+            raise PermissionDenied("You don't have access to this page.")
+        return view_func(request, *args, **kwargs)
+    return _wrapped
 
 
-@user_passes_test(_is_staff, login_url='accounts:login')
+@staff_required
 def stats_view(request):
     orders = Order.objects.exclude(status='cancelled')
 

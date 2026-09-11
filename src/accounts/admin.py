@@ -17,10 +17,15 @@ class CustomUserAdmin(UserAdmin):
         (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
     )
+    # is_staff/is_superuser nu apar aici intenționat: un cont cu drept de "add
+    # customuser" nu trebuie să poată crea direct un superuser din formularul
+    # de creare. Permisiunile astea se acordă doar din formularul de editare
+    # (fieldsets), unde Django restricționează schimbarea is_superuser doar la
+    # utilizatori care sunt ei înșiși superuser.
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'email', 'password1', 'password2', 'is_active', 'is_staff', 'is_superuser')}
+            'fields': ('username', 'email', 'password1', 'password2')}
         ),
     )
 

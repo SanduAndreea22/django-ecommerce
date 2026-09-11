@@ -3,6 +3,7 @@ from decimal import Decimal, InvalidOperation
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db import IntegrityError, transaction
 from django.db.models import Prefetch
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
@@ -121,8 +122,16 @@ def product_detail(request, slug):
             review = review_form.save(commit=False)
             review.product = product
             review.user = request.user
-            review.save()
-            messages.success(request, "Thanks for your review!")
+            try:
+                with transaction.atomic():
+                    review.save()
+            except IntegrityError:
+                # Dublă submisie (dublu-click) pe același review: constrângerea
+                # unique_together('product','user') respinge a doua inserare —
+                # tratăm asta ca succes, nu ca eroare de server.
+                messages.info(request, "Your review for this product was already recorded.")
+            else:
+                messages.success(request, "Thanks for your review!")
             return redirect(product.get_absolute_url())
     else:
         review_form = ReviewForm(instance=existing_review)

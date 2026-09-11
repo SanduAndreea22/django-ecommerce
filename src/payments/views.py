@@ -53,25 +53,31 @@ def stripe_checkout(request, order_number):
         return redirect('orders:order_detail', order_id=order.id)
 
     stripe.api_key = settings.STRIPE_SECRET_KEY
-    session = stripe.checkout.Session.create(
-        payment_method_types=['card'],
-        mode='payment',
-        line_items=[{
-            'price_data': {
-                'currency': 'ron',
-                'product_data': {'name': f'Order #{order.order_number}'},
-                'unit_amount': int(order.total_after_discount * 100),
-            },
-            'quantity': 1,
-        }],
-        success_url=request.build_absolute_uri(
-            reverse('payments:stripe_success', args=[order.order_number])
-        ) + '?session_id={CHECKOUT_SESSION_ID}',
-        cancel_url=request.build_absolute_uri(
-            reverse('payments:stripe_cancel', args=[order.order_number])
-        ),
-        metadata={'order_number': order.order_number},
-    )
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            mode='payment',
+            line_items=[{
+                'price_data': {
+                    'currency': 'ron',
+                    'product_data': {'name': f'Order #{order.order_number}'},
+                    'unit_amount': int(order.total_after_discount * 100),
+                },
+                'quantity': 1,
+            }],
+            success_url=request.build_absolute_uri(
+                reverse('payments:stripe_success', args=[order.order_number])
+            ) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=request.build_absolute_uri(
+                reverse('payments:stripe_cancel', args=[order.order_number])
+            ),
+            metadata={'order_number': order.order_number},
+            timeout=10,
+        )
+    except stripe.error.StripeError:
+        messages.error(request, "We couldn't reach our payment provider. Please try again in a moment.")
+        return redirect('orders:order_detail', order_id=order.id)
+
     return render(request, 'payments/redirecting.html', {
         'order': order,
         'checkout_url': session.url,
