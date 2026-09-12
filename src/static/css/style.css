@@ -871,6 +871,11 @@ select:focus { border-color: var(--color-dark); outline: none; }
     justify-content: space-between;
     margin: 5px 0;
 }
+.order-summary .checkout-coupon-note {
+    display: block;
+    font-size: 14px;
+    color: var(--color-text-muted);
+}
 
 /* ==== Order History / Detail ==== */
 .order-history-container { margin-bottom: 60px; }

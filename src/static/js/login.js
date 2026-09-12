@@ -6,9 +6,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (input.type === "password") {
                 input.type = "text";
                 button.textContent = "🙈";
+                button.setAttribute("aria-label", "Hide password");
             } else {
                 input.type = "password";
                 button.textContent = "👁️";
+                button.setAttribute("aria-label", "Show password");
             }
         });
     });

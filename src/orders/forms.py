@@ -9,3 +9,4 @@ class ShippingAddressForm(forms.ModelForm):
             'city', 'postal_code', 'country'
         ]
         widgets = {field: forms.TextInput(attrs={'class': 'form-control'}) for field in fields}
+        labels = {'address_line_2': 'Address Line 2 (optional)'}

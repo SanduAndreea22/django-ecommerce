@@ -44,6 +44,10 @@
             <p><strong>Subtotal:</strong> <span id="subtotal">{{ subtotal|floatformat:2 }}</span> RON</p>
             {% if discount %}
             <p><strong>Discount:</strong> <span id="discount">{{ discount|floatformat:2 }}</span> RON</p>
+            {% else %}
+            <p class="checkout-coupon-note">
+                Have a coupon? <a href="{% url 'cart:cart_detail' %}">Apply it from your cart</a> before placing the order.
+            </p>
             {% endif %}
             <p><strong>Total:</strong> <span id="total">{{ total|floatformat:2 }}</span> RON</p>
         </div>
